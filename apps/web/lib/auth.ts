@@ -1,0 +1,117 @@
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma } from "@repo/db/index";
+import bcrypt from "bcrypt";
+import { Credentials } from "../types/next-auth";
+import { JWT } from "next-auth/jwt";
+import jwt from "jsonwebtoken";
+
+function getSecret() {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret) {
+    throw new Error("NEXTAUTH SECRET NOT FOUND");
+  }
+  return secret;
+}
+
+export const authOptions: NextAuthOptions = {
+  session: {
+    strategy: "jwt",
+  },
+  secret: getSecret(),
+  callbacks: {
+    async jwt({ token, user, account }) {
+      if (account && user) {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+      }
+      return session;
+    },
+  },
+  jwt: {
+    secret: process.env.NEXTAUTH_SECRET!,
+    encode: async ({ token, secret }) => {
+      return jwt.sign(token!, secret, { algorithm: "HS256" });
+    },
+    decode: async ({ token, secret }) => {
+      return jwt.verify(token!, secret) as Promise<JWT | null>;
+    },
+  },
+
+  providers: [
+    CredentialsProvider({
+      type: "credentials",
+      name: "Credentials",
+      credentials: {
+        name: { label: "Name", type: "text", placeholder: "John Doe" },
+        email: {
+          label: "Email",
+          type: "text",
+          placeholder: "john@example.com",
+        },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials: Credentials | undefined) {
+        if (!credentials) {
+          throw new Error("Provide Credentials");
+        }
+        const { name, email, password } = credentials;
+        if (!email || !password) {
+          throw new Error("Provide Login Credentials");
+        }
+
+        const hashedPassword = await bcrypt.hash(credentials.password, 10);
+        const existingUser = await prisma.user.findFirst({
+          where: {
+            email,
+          },
+        });
+        if (existingUser) {
+          const passwordValidation = await bcrypt.compare(
+            credentials.password,
+            existingUser.password
+          );
+          if (passwordValidation) {
+            return {
+              id: existingUser.id.toString(),
+              name: existingUser.name,
+              email: existingUser.email,
+            };
+          }
+          throw new Error("Incorrect Password");
+        } else {
+          if (!name) {
+            throw new Error("User Not Found");
+          }
+          try {
+            const user = await prisma.user.create({
+              data: {
+                email,
+                name,
+                password: hashedPassword,
+              },
+            });
+            return {
+              id: user.id.toString(),
+              name: user.name,
+              email: user.email,
+            };
+          } catch (e) {
+            console.log(e);
+            throw new Error("Error");
+          }
+        }
+      },
+    }),
+  ],
+};

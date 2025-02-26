@@ -1,50 +1,29 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer components {
+  .border-custom {
+    @apply border-neutral-300 dark:border-neutral-700;
+  }
+  .text-custom {
+    @apply text-violet-600 dark:text-violet-400;
   }
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+
+.scrollbar-w-2::-webkit-scrollbar {
+  width: 0.1rem;
+  height: 0.01rem;
 }
-
-body {
-  color: var(--foreground);
-  background: var(--background);
+.scrollbar-track-blue-lighter::-webkit-scrollbar-track {
+  --bg-opacity: 1;
+  /* background-color: #787878; */
 }
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+.scrollbar-thumb-blue::-webkit-scrollbar-thumb {
+  --bg-opacity: 1;
+  background-color: #ccc9c9;
 }
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.imgDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
+.scrollbar-thumb-rounded::-webkit-scrollbar-thumb {
+  border-radius: 0.45rem;
 }
