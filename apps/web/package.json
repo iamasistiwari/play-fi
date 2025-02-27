@@ -13,15 +13,22 @@
   "dependencies": {
     "@prisma/client": "^6.4.1",
     "@repo/db": "workspace:*",
+    "@tailwindcss/forms": "^0.5.10",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.9",
     "bcrypt": "^5.1.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.476.0",
     "next": "15.1.7",
     "next-auth": "^4.24.11",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hot-toast": "^2.5.2"
+    "react-hot-toast": "^2.5.2",
+    "tailwind-merge": "^3.0.2",
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
@@ -31,8 +38,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "postcss": "^8",
+    "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5",
-    "prettier-plugin-tailwindcss": "^0.6.11"
+    "typescript": "^5"
   }
 }
