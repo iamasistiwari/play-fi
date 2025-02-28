@@ -11,7 +11,7 @@ const buttonVariants = cva(
       variant: {
         default: "text-white bg-green-800 hover:opacity-75",
         ghost:
-          "bg-neutral-50 dark:bg-neutral-800 text-black dark:text-white hover:opacity-75 border border-custom",
+          "bg-transparent text-white hover:opacity-75 border border-custom",
       },
       size: {
         default: "py-3 px-7 h-11",
@@ -29,10 +29,10 @@ export interface ButtonsProps
   extends ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   isLoading: boolean;
-  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> | null;
 }
 
-const Button: FC<ButtonsProps> = ({
+const CustomButton: FC<ButtonsProps> = ({
   className,
   children,
   variant,
@@ -50,10 +50,10 @@ const Button: FC<ButtonsProps> = ({
       {isLoading ? (
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
       ) : (
-        <Icon className="mr-2 h-4 w-4" />
+        Icon === null ? null : <Icon className="mr-2 h-4 w-4" />
       )}
       {children}
     </button>
   );
 };
-export default Button;
+export default CustomButton;
