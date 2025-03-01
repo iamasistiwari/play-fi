@@ -9,12 +9,12 @@ export default function Provider({ children }: { children: React.ReactNode }) {
     const shouldUseSocket = pathname !== "/" && pathname !== "/offline";
     return shouldUseSocket ? (
         <SocketProvider>
-            <Toaster position="top-center" reverseOrder={false} />
+            <Toaster position="top-right" reverseOrder={false} />
             {children}
         </SocketProvider>
     ) : (
         <>
-            <Toaster position="top-center" reverseOrder={false} />
+            <Toaster position="top-right" reverseOrder={false} />
             {children}
         </>
     );
