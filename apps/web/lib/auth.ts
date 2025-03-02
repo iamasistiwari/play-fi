@@ -5,6 +5,22 @@ import bcrypt from "bcrypt";
 import { Credentials } from "../types/next-auth";
 import { JWT } from "next-auth/jwt";
 import jwt from "jsonwebtoken";
+import SpotifyProvider from "next-auth/providers/spotify"
+
+
+const scopes = [
+  "user-read-email",
+  "playlist-read-private",
+  "playlist-read-collaborative",
+  "user-read-currently-playing",
+  "user-modify-playback-state",
+].join(",");
+
+const params = {
+  scope: scopes
+}
+
+const LOGIN_URL = "https://accounts.spotify.com/authorize?" + new URLSearchParams(params).toString()
 
 function getSecret() {
   const secret = process.env.NEXTAUTH_SECRET;
@@ -25,6 +41,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
+        token.accessToken = account.access_token || ""
       }
       return token;
     },
@@ -34,6 +51,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.name = token.name;
         session.user.email = token.email;
+        session.user.accessToken = token.accessToken || "";
       }
       return session;
     },
@@ -49,6 +67,10 @@ export const authOptions: NextAuthOptions = {
   },
 
   providers: [
+    SpotifyProvider({
+      clientId: process.env.SPOTIFY_CLIENT!,
+      clientSecret: process.env.SPOTIFY_SECRET!,
+    }),
     CredentialsProvider({
       type: "credentials",
       name: "Credentials",
@@ -79,7 +101,7 @@ export const authOptions: NextAuthOptions = {
         if (existingUser) {
           const passwordValidation = await bcrypt.compare(
             credentials.password,
-            existingUser.password
+            existingUser.password,
           );
           if (passwordValidation) {
             return {

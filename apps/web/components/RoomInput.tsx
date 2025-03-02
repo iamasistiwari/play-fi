@@ -1,33 +1,46 @@
-"use client"
-import React, { useState } from 'react'
-import Input from './ui/Input'
-import { Plus } from 'lucide-react'
-import CustomButton from './ui/CustomButton';
-import { AlertDialog } from 'radix-ui';
-import toast from 'react-hot-toast';
+"use client";
+import React, { useState } from "react";
+import Input from "./ui/Input";
+import { Plus } from "lucide-react";
+import CustomButton from "./ui/CustomButton";
+import { AlertDialog } from "radix-ui";
+import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
 export default function RoomInput() {
-    const [generatedCode, setGeneratedCode] = useState<string>("")
-    const [roomPassword, setRoomPassword] = useState<string>("")
-    const [errors, setErrors] = useState<boolean>(false)
+  const session = useSession();
+  const [generatedCode, setGeneratedCode] = useState<string>("");
+  const [roomPassword, setRoomPassword] = useState<string>("");
+  const [titleError, setTitleError] = useState<boolean>(false);
+  const [passError, setPassError] = useState<boolean>(false);
+
+  const generateCode = (length: number = 6): string => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * chars.length);
+      code += chars[randomIndex];
+    }
+    return code;
+  };
+
   return (
-    <div>
-      <form className="flex flex-col">
-        <div className="flex flex-col">
+    <div className="mt-12 flex flex-row justify-between space-x-20 px-32">
+      <form className="flex max-w-[450px] flex-col space-y-10 ml-32">
+        <div className="flex flex-col space-y-1">
           <label htmlFor="createRoom">Create room</label>
-          {/* DAILOG */}
           <AlertDialog.Root>
             <AlertDialog.Trigger asChild>
               <CustomButton
                 id="createRoom"
-                className="max-w-sm"
+                className="max-w-full tracking-widest"
                 isLoading={false}
                 Icon={Plus}
                 onClick={async () => {
                   const code = generateCode();
                   setGeneratedCode(code);
                   await navigator.clipboard.writeText(code);
-                  toast.success("Code copied!", {duration: 4000});
+                  toast.success("Code copied!", { duration: 4000 });
                 }}
               >
                 Create room
@@ -43,12 +56,15 @@ export default function RoomInput() {
                   <span className="text-center font-mono text-2xl font-semibold leading-10 tracking-widest text-blue-400">
                     {generatedCode}
                   </span>
+                  <label className="mt-2 pl-0.5 text-sm text-black">
+                    Enter room title
+                  </label>
                   <Input
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       if (e.target.value.length < 8) {
-                        setErrors(true);
+                        setTitleError(true);
                       } else {
-                        setErrors(false);
+                        setTitleError(false);
                         setRoomPassword(e.target.value);
                       }
                     }}
@@ -56,8 +72,31 @@ export default function RoomInput() {
                     className="mt-2 w-full tracking-tight text-neutral-800"
                     type="password"
                   />
-                  {errors ? (
-                    <span className='text-red-400 text-sm mt-2'>Password must be at least 8 characters</span>
+                  {titleError ? (
+                    <span className="mt-2 text-sm text-red-400">
+                      Title must be at least 10 characters
+                    </span>
+                  ) : null}
+                  <label className="mt-2 pl-0.5 text-sm text-black">
+                    Enter room password
+                  </label>
+                  <Input
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      if (e.target.value.length < 8) {
+                        setPassError(true);
+                      } else {
+                        setPassError(false);
+                        setRoomPassword(e.target.value);
+                      }
+                    }}
+                    placeholder="enter room password"
+                    className="mt-2 w-full tracking-tight text-neutral-800"
+                    type="password"
+                  />
+                  {passError ? (
+                    <span className="mt-2 text-sm text-red-400">
+                      Password must be at least 8 characters
+                    </span>
                   ) : null}
                 </AlertDialog.Description>
                 <div className="flex justify-end gap-[25px]">
@@ -70,7 +109,8 @@ export default function RoomInput() {
                     <CustomButton
                       Icon={null}
                       isLoading={false}
-                      className="focus-visible:outline-red7 inline-flex h-[35px] select-none items-center justify-center rounded bg-green-200 px-[15px] font-medium leading-none text-green-700 outline-none outline-offset-1 hover:bg-green-300 focus-visible:outline-2"
+                      disabled={true}
+                      className="focus-visible:outline-red7 inline-flex h-[35px] select-none items-center justify-center rounded bg-green-200 px-[15px] font-medium leading-none text-green-700 outline-none outline-offset-1 hover:bg-green-300 focus-visible:outline-2 disabled:cursor-not-allowed"
                     >
                       Create
                     </CustomButton>
@@ -80,13 +120,13 @@ export default function RoomInput() {
             </AlertDialog.Portal>
           </AlertDialog.Root>
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col space-y-1">
           <label htmlFor="joinRoom">Join room</label>
-          <div>
-            <Input id="joinRoom" placeholder="enter room id" />
+          <div className="space-x-3">
+            <Input id="joinRoom" placeholder="enter room id" className="tracking-widest"/>
             <CustomButton
               variant={"ghost"}
-              className="w-52"
+              className="h-12 w-28 bg-blue-700 tracking-widest"
               isLoading={false}
               Icon={null}
             >
@@ -95,18 +135,88 @@ export default function RoomInput() {
           </div>
         </div>
       </form>
+      <div className="border-custom flex max-h-[90vh] min-h-[60vh] w-96 scroll-smooth flex-col rounded-xl border pt-2">
+        <span className="flex justify-center text-lg font-semibold">
+          Recent joined rooms
+        </span>
+
+        <div className="scrollbar-w-2 scrollbar-track-blue-lighter scrollbar-thumb-blue scrollbar-thumb-rounded flex max-h-[70vh] flex-col justify-between space-y-3 overflow-y-auto px-3 py-4 text-start">
+          {[
+            {
+              title: "Ajaoo music bjate hai",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Ajaoo music bjate hai",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Ajaoo music bjate hai",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Saturday stream join",
+              code: "NAMME",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Bgmi jonthan room",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Beat pe dance",
+              code: "JKXKSQ",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Music Bajaoo laundo",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Music Bajaoo laundo",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Music Bajaoo laundo",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Ajaoo music bjate hai",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Saturday stream join",
+              code: "NAMME",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Ajaoo music bjate hai",
+              code: "RJSXO",
+              Owner: "Ashish Tiwari",
+            },
+            {
+              title: "Saturday stream join",
+              code: "NAMME",
+              Owner: "Ashish Tiwari",
+            },
+          ].map((value, index) => (
+            <div className="flex flex-col" key={index}>
+              <span>{value.title}</span>
+              <span className="pt-0.5 text-xs text-neutral-300">
+                room id - {value.code}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
-}
-
-
-const generateCode = (length:number = 6): string => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    let result = ""
-    
-    for(let i = 0; i < length; i++){
-        const randomIndex = Math.floor(Math.random() * chars.length)
-        result += chars[randomIndex]
-    }
-    return result
 }

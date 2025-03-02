@@ -8,7 +8,7 @@ export default async function page() {
   const session = await getServerSession(authOptions);
   return (
     <div>
-      <nav className="flex h-16 items-center justify-between border-b border-neutral-800 px-20">
+      <nav className="flex h-16 items-center justify-between border-b border-neutral-800 px-32">
         <span className="inline-block bg-gradient-to-r from-blue-500 to-green-600 bg-clip-text text-2xl font-semibold text-transparent">
           Play-Fi
         </span>

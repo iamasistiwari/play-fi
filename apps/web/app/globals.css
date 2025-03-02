@@ -13,7 +13,7 @@
 
 
 .scrollbar-w-2::-webkit-scrollbar {
-  width: 0.1rem;
+  width: 0.04rem;
   height: 0.01rem;
 }
 .scrollbar-track-blue-lighter::-webkit-scrollbar-track {
