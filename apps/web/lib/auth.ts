@@ -14,7 +14,12 @@ const scopes = [
   "playlist-read-collaborative",
   "user-read-currently-playing",
   "user-modify-playback-state",
+  "user-read-playback-state",
+  "streaming",
+  "user-read-private",
+  "app-remote-control",
 ].join(",");
+
 
 const params = {
   scope: scopes
@@ -30,6 +35,26 @@ function getSecret() {
   return secret;
 }
 
+async function refreshToken(token: JWT) {
+  const params = new URLSearchParams()
+  params.append("grant_type", "refresh_token")
+  params.append("refresh_token", token.refreshToken)
+  const response = await fetch(`https://accounts.spotify.com/api/token"`, {
+    method: "POST",
+    headers: {
+      Authorization: "Basic " + Buffer.from( process.env.SPOTIFY_CLIENT! + ":" + process.env.SPOTIFY_SECRET!).toString("base64"),
+    },
+    body: params,
+  });
+  const data = await response.json()
+  return {
+    ...token,
+    accessToken: data.access_token as unknown as string,
+    refreshToken: (data.refresh_token ?? token.refreshToken) as unknown as string,
+    accessTokenExpires: Date.now() + data.expires_in * 1000 as unknown as number
+  };
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
@@ -37,13 +62,19 @@ export const authOptions: NextAuthOptions = {
   secret: getSecret(),
   callbacks: {
     async jwt({ token, user, account }) {
-      if (account && user) {
+      if (account) {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
         token.accessToken = account.access_token || ""
+        token.refreshToken = account.refresh_token || ""
+        token.accessTokenExpires = account.expires_at || 0
+        return token
       }
-      return token;
+      if(Date.now() < token.accessTokenExpires * 1000){
+        return token
+      }
+      return await refreshToken(token);
     },
 
     async session({ session, token }) {
@@ -70,6 +101,7 @@ export const authOptions: NextAuthOptions = {
     SpotifyProvider({
       clientId: process.env.SPOTIFY_CLIENT!,
       clientSecret: process.env.SPOTIFY_SECRET!,
+      authorization: LOGIN_URL
     }),
     CredentialsProvider({
       type: "credentials",
