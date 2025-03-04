@@ -30,6 +30,7 @@ export interface ButtonsProps
     VariantProps<typeof buttonVariants> {
   isLoading: boolean;
   Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> | null;
+  iconStyle?: string
 }
 
 const CustomButton: FC<ButtonsProps> = ({
@@ -39,6 +40,7 @@ const CustomButton: FC<ButtonsProps> = ({
   size,
   Icon,
   isLoading,
+  iconStyle,
   ...props
 }) => {
   return (
@@ -49,8 +51,8 @@ const CustomButton: FC<ButtonsProps> = ({
     >
       {isLoading ? (
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-      ) : (
-        Icon === null ? null : <Icon className="mr-2 h-4 w-4" />
+      ) : Icon === null ? null : (
+        <Icon className={`mr-2 h-4 w-4 ${iconStyle}`} />
       )}
       {children}
     </button>

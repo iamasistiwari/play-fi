@@ -8,16 +8,23 @@ import jwt from "jsonwebtoken";
 import SpotifyProvider from "next-auth/providers/spotify"
 
 
+// const scopes = [
+//   "user-read-email",
+//   "playlist-read-private",
+//   "playlist-read-collaborative",
+//   "user-read-currently-playing",
+//   "user-modify-playback-state",
+//   "user-read-playback-state",
+//   "streaming",
+//   "user-read-private",
+//   "app-remote-control",
+// ].join(",");
 const scopes = [
   "user-read-email",
-  "playlist-read-private",
-  "playlist-read-collaborative",
   "user-read-currently-playing",
   "user-modify-playback-state",
   "user-read-playback-state",
   "streaming",
-  "user-read-private",
-  "app-remote-control",
 ].join(",");
 
 
@@ -38,7 +45,8 @@ function getSecret() {
 async function refreshToken(token: JWT) {
   const params = new URLSearchParams()
   params.append("grant_type", "refresh_token")
-  params.append("refresh_token", token.refreshToken)
+  params.append("refresh_token", token.refreshToken!)
+
   const response = await fetch(`https://accounts.spotify.com/api/token"`, {
     method: "POST",
     headers: {
@@ -62,19 +70,27 @@ export const authOptions: NextAuthOptions = {
   secret: getSecret(),
   callbacks: {
     async jwt({ token, user, account }) {
-      if (account) {
+      if (account?.provider === "spotify") {
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
-        token.accessToken = account.access_token || ""
-        token.refreshToken = account.refresh_token || ""
-        token.accessTokenExpires = account.expires_at || 0
-        return token
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.accessTokenExpires = account.expires_at;
+        return token;
       }
-      if(Date.now() < token.accessTokenExpires * 1000){
-        return token
+      if (account?.provider === "credentials"){
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        return token;
+      } 
+      if(token.accessToken && token.accessTokenExpires){
+        if(Date.now() > token.accessTokenExpires * 1000){
+          return await refreshToken(token);
+        }
       }
-      return await refreshToken(token);
+      return token
     },
 
     async session({ session, token }) {
@@ -82,7 +98,9 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.name = token.name;
         session.user.email = token.email;
-        session.user.accessToken = token.accessToken || "";
+        if(token.accessToken){
+          session.user.accessToken = token.accessToken;
+        }
       }
       return session;
     },
