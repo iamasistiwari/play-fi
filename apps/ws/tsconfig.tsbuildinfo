@@ -1,1 +1,1 @@
-{"root":["./src/bin.ts","./src/index.ts"],"version":"5.7.3"}
+{"root":["./src/bin.ts","./src/index.ts","./src/helpers/room.ts","./src/helpers/roommanager.ts","./src/helpers/memory.ts","./src/helpers/validation.ts","./types/ws.d.ts"],"version":"5.7.3"}

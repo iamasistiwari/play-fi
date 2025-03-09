@@ -13,14 +13,16 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.4.1",
-    "@repo/db": "workspace:*",
     "@repo/common": "workspace:*",
+    "@repo/db": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/dotenv": "^8.2.3",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.10.10",
     "@types/ws": "^8.5.14",
     "dotenv": "^16.4.7",
     "eslint": "^9.18.0",
+    "jsonwebtoken": "^9.0.2",
     "ws": "^8.18.1"
   }
 }

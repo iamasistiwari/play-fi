@@ -1,14 +1,15 @@
-import WebSocket from "ws";
-import {WebSocketMessages} from "@repo/common/type"
+import {WebSocket} from "ws";
+import { ToWebSocketMessages } from "@repo/common/type";
+import RoomManager from "./helpers/RoomManager";
 
-export function handleMessage(socket: WebSocket ,msg: WebSocket.RawData) {
-    try {
-        const data = (JSON.parse(msg.toString())) as unknown as WebSocketMessages
+const roomManager = RoomManager.getInstance()
 
-        if(data.type === "create_room") {
-        }
-        
-    } catch (error) {
-        socket.send("Invalid Format")
+export function handleMessage(socket: WebSocket, data: ToWebSocketMessages) {
+  try {
+    if(data.type === "create_room" || data.type === "join_room"){
+      return roomManager.handleRoom(socket, data)
     }
+  } catch (error) {
+    return socket.send("Invalid Format");
+  }
 }
