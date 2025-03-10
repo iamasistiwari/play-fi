@@ -1,5 +1,5 @@
-import { FromWebSocketMessages, ToWebSocketMessages } from "@repo/common/type";
-import WebSocket from "ws";
+import { FromWebSocketMessages, ToWebSocketMessages, ValidateCreateRoomSchema } from "@repo/common/type";
+import {WebSocket} from "ws";
 import { musicRoom } from "./memory";
 import Room from "./Room";
 
@@ -17,11 +17,20 @@ export default class RoomManager {
 
   handleRoom(socket: WebSocket, data: ToWebSocketMessages) {
     if (data.type === "create_room") {
+      const zodChecking = ValidateCreateRoomSchema.safeParse(data)
+      if(zodChecking.error){
+        const sendMsg: FromWebSocketMessages = {
+          type: "error",
+          message: "Invalid payload",
+        };
+        socket.send(JSON.stringify(sendMsg));
+        return;
+      }
       const roomId = data.roomId;
       if (!musicRoom.get(roomId)) {
         musicRoom.set(
           roomId,
-          new Room(socket, data.roomTitle, data.roomPassword)
+          new Room(socket, data.roomTitle, data.roomPassword, data.accessToken)
         );
         const sendMsg: FromWebSocketMessages = {
           type: "joined",
