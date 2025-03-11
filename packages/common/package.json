@@ -15,6 +15,6 @@
     "zod": "^3.24.2"
   },
   "exports": {
-    "./index": "./src/index.ts"
+    "./type": "./src/type.ts"
   }
 }
