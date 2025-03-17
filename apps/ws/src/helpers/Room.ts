@@ -5,12 +5,12 @@ import { AxiosError } from "axios";
 
 
 export default class Room {
-  private joinedPersons: WebSocket[];
+  private joinedPlayersWebsocket: WebSocket[];
+  private joinedPlayerIds: Map<string, string>
   private roomTitle: string;
   private roomPassword: string;
-  private adminSocket: WebSocket;
-  private adminId: string;
   private accessToken: string;
+  private adminId: string;
 
   constructor(
     socket: WebSocket,
@@ -18,20 +18,22 @@ export default class Room {
     roomPassword: string,
     accessToken: string
   ) {
-    this.joinedPersons = [];
+    this.joinedPlayersWebsocket = [];
     this.roomPassword = roomPassword;
     this.roomTitle = roomTitle;
-    this.adminSocket = socket;
-    this.joinedPersons.push(socket);
+    this.joinedPlayersWebsocket.push(socket);
     this.adminId = socket.userId;
     this.accessToken = accessToken;
+    this.joinedPlayerIds = new Map()
+    this.joinedPlayerIds.set(socket.userId, "")
   }
 
-  setAdmin(socket: WebSocket) {
-    this.adminSocket = socket;
-  }
   addPersons(socket: WebSocket) {
-    this.joinedPersons.push(socket);
+    this.joinedPlayersWebsocket.push(socket);
+    const isPresent = this.joinedPlayerIds.get(socket.userId)
+    if(!isPresent){
+      this.joinedPlayerIds.set(socket.userId, "")
+    }
   }
   getRoomPassword() {
     return this.roomPassword;
@@ -40,12 +42,15 @@ export default class Room {
     return this.roomTitle;
   }
   checkPersonPresence(socket: WebSocket){
-    this.joinedPersons.map((joinedSocket) => {
-      if(joinedSocket === socket){
-        return true
-      }
-    })
-    return false
+    // const isPresent = this.joinedPlayerIds.some((id) => {
+    //   return socket.userId === id
+    // })
+    // return isPresent
+    const isPresent = this.joinedPlayerIds.get(socket.userId);
+    if (!isPresent) {
+      return false;
+    }
+    return true;
   }
 
   async searchSong(socket: WebSocket,song: string) {

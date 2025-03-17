@@ -1,14 +1,18 @@
-import { FromWebSocketMessages, ToWebSocketMessages, ValidateCreateRoomSchema } from "@repo/common/type";
-import {WebSocket} from "ws";
-import { musicRoom } from "./memory";
+import {
+  FromWebSocketMessages,
+  ToWebSocketMessages,
+  ValidateCreateRoomSchema,
+} from "@repo/common/type";
+import { WebSocket } from "ws";
 import Room from "./Room";
+import { musicRooms } from "./memory";
 
 export default class RoomManager {
   private static instance: RoomManager;
 
-  constructor() {}
+  private constructor() {}
 
-  static getInstance() {
+  public static getInstance() {
     if (!RoomManager.instance) {
       RoomManager.instance = new RoomManager();
     }
@@ -17,8 +21,8 @@ export default class RoomManager {
 
   handleRoom(socket: WebSocket, data: ToWebSocketMessages) {
     if (data.type === "create_room") {
-      const zodChecking = ValidateCreateRoomSchema.safeParse(data)
-      if(zodChecking.error){
+      const zodChecking = ValidateCreateRoomSchema.safeParse(data);
+      if (zodChecking.error) {
         const sendMsg: FromWebSocketMessages = {
           type: "error",
           message: "Invalid payload",
@@ -27,8 +31,10 @@ export default class RoomManager {
         return;
       }
       const roomId = data.roomId;
-      if (!musicRoom.get(roomId)) {
-        musicRoom.set(
+      const room = musicRooms.get(roomId)
+
+      if (!room) {
+        musicRooms.set(
           roomId,
           new Room(socket, data.roomTitle, data.roomPassword, data.accessToken)
         );
@@ -49,35 +55,57 @@ export default class RoomManager {
     }
     if (data.type === "join_room") {
       const roomId = data.roomId;
-      const room = musicRoom.get(roomId);
-      if (room) {
-        const roomPassword = room.getRoomPassword();
-        const checkPassword = roomPassword === data.roomPassword;
-        if (!checkPassword) {
+
+      const room = musicRooms.get(roomId);
+      if(!room){
           const sendMsg: FromWebSocketMessages = {
             type: "error",
-            message: "Invalid password",
+            message: "Room not exists",
           };
           return socket.send(JSON.stringify(sendMsg));
-        }
-        room.addPersons(socket);
-        const roomTitle = room.getRoomTitle()
-        const sendMsg: FromWebSocketMessages = {
-          type: "joined",
-          message: `${roomTitle}`,
-        };
-        return socket.send(JSON.stringify(sendMsg));
-      } else {
+      }
+      const roomPassword = room.getRoomPassword()
+      const checkPassword = roomPassword === data.roomPassword
+
+      if (!checkPassword) {
         const sendMsg: FromWebSocketMessages = {
           type: "error",
-          message: "Room not exists",
+          message: "Invalid password",
         };
         return socket.send(JSON.stringify(sendMsg));
       }
+      room.addPersons(socket);
+      const roomTitle = room.getRoomTitle();
+      const sendMsg: FromWebSocketMessages = {
+        type: "joined",
+        message: `${roomTitle}`,
+      };
+      return socket.send(JSON.stringify(sendMsg));
     }
   }
 
-  handleVote(){
-    
+  handleSearch(socket: WebSocket, song: string, roomId: string) {
+    const room = musicRooms.get(roomId)
+    if (!room) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "room doesn't exists",
+      };
+      socket.send(JSON.stringify(sendMsg));
+      return;
+    }
+    // checking this user is exits in the room or not
+    const isPersonJoined = room.checkPersonPresence(socket);
+
+    if (!isPersonJoined) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "you are not part of this room",
+      };
+      socket.send(JSON.stringify(sendMsg));
+      return;
+    }
+    // now person is joined search the song and give back the result
+    return room.searchSong(socket, song);
   }
 }

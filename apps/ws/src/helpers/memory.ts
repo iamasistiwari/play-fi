@@ -1,3 +1,3 @@
 import Room from "./Room";
 
-export const musicRoom: Map<string, Room> = new Map();
+export const musicRooms: Map<string, Room> = new Map()
