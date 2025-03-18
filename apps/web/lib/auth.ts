@@ -6,41 +6,31 @@ import { Credentials } from "../types/next-auth";
 import { JWT } from "next-auth/jwt";
 import jwt from "jsonwebtoken";
 import SpotifyProvider from "next-auth/providers/spotify"
+import GoogleProvider from "next-auth/providers/google"
 
-
-// const scopes = [
-//   "user-read-email",
-//   "playlist-read-private",
-//   "playlist-read-collaborative",
-//   "user-read-currently-playing",
-//   "user-modify-playback-state",
-//   "user-read-playback-state",
-//   "streaming",
-//   "user-read-private",
-//   "app-remote-control",
-// ].join(",");
 const scopes = [
   "user-read-email",
+  "playlist-read-private",
+  "playlist-read-collaborative",
   "user-read-currently-playing",
   "user-modify-playback-state",
   "user-read-playback-state",
   "streaming",
+  "user-read-private",
+  "app-remote-control",
 ].join(",");
 
+const params = new URLSearchParams({
+  client_id: process.env.SPOTIFY_CLIENT!,
+  response_type: "code",
+  redirect_uri: process.env.NEXTAUTH_URL + "/api/auth/callback/spotify",
+  scope: scopes,
+  prompt: "login",
+  show_dialog: "true",
+});
 
-const params = {
-  scope: scopes
-}
+const LOGIN_URL = `https://accounts.spotify.com/authorize?${params.toString()}`;
 
-const LOGIN_URL = "https://accounts.spotify.com/authorize?" + new URLSearchParams(params).toString()
-
-function getSecret() {
-  const secret = process.env.NEXTAUTH_SECRET;
-  if (!secret) {
-    throw new Error("NEXTAUTH SECRET NOT FOUND");
-  }
-  return secret;
-}
 
 async function refreshToken(token: JWT) {
   const params = new URLSearchParams()
@@ -67,44 +57,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  secret: getSecret(),
-  callbacks: {
-    async jwt({ token, user, account }) {
-      if (account?.provider === "spotify") {
-        token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        token.accessToken = account.access_token;
-        token.refreshToken = account.refresh_token;
-        token.accessTokenExpires = account.expires_at;
-        return token;
-      }
-      if (account?.provider === "credentials"){
-        token.id = user.id;
-        token.name = user.name;
-        token.email = user.email;
-        return token;
-      } 
-      if(token.accessToken && token.accessTokenExpires){
-        if(Date.now() > token.accessTokenExpires * 1000){
-          return await refreshToken(token);
-        }
-      }
-      return token
-    },
-
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        if(token.accessToken){
-          session.user.accessToken = token.accessToken;
-        }
-      }
-      return session;
-    },
-  },
+  secret: process.env.NEXTAUTH_SECRET,
   jwt: {
     secret: process.env.NEXTAUTH_SECRET!,
     encode: async ({ token, secret }) => {
@@ -116,11 +69,6 @@ export const authOptions: NextAuthOptions = {
   },
 
   providers: [
-    SpotifyProvider({
-      clientId: process.env.SPOTIFY_CLIENT!,
-      clientSecret: process.env.SPOTIFY_SECRET!,
-      authorization: LOGIN_URL
-    }),
     CredentialsProvider({
       type: "credentials",
       name: "Credentials",
@@ -185,5 +133,60 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
+    SpotifyProvider({
+      clientId: process.env.SPOTIFY_CLIENT!,
+      clientSecret: process.env.SPOTIFY_SECRET!,
+      authorization: LOGIN_URL,
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
+  callbacks: {
+    async jwt({ token, user, account }) {
+      if (account?.provider === "spotify") {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
+        token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.accessTokenExpires = account.expires_at;
+        return token;
+      }
+      if (account?.provider === "credentials") {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        return token;
+      }
+      if (account?.provider === "google") {
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.picture = user.image;
+        return token;
+      }
+      if (token.accessToken && token.accessTokenExpires) {
+        if (Date.now() > token.accessTokenExpires * 1000) {
+          return await refreshToken(token);
+        }
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        if (token.accessToken) {
+          session.user.accessToken = token.accessToken;
+        }
+      }
+      return session;
+    },
+  },
 };
+

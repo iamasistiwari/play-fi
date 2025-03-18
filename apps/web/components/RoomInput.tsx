@@ -1,21 +1,31 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Input from "./ui/Input";
-import { Info, Plus } from "lucide-react";
+import { Info, Plus, UserSearch } from "lucide-react";
 import CustomButton from "./ui/CustomButton";
 import { AlertDialog } from "radix-ui";
 import toast from "react-hot-toast";
 import { FaSpotify } from "react-icons/fa6";
-
-// import { useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import axios, { AxiosError } from "axios";
+import { useSocket } from "@/hooks/useSocket";
+import { ValidateCreateRoomSchema } from "@repo/common/type";
+import { useRouter } from "next/navigation";
 
 export default function RoomInput() {
-  // const session = useSession();
-  const [generatedCode, setGeneratedCode] = useState<string>("");
-  const [, setRoomPassword] = useState<string>("");
-  const [titleError, setTitleError] = useState<boolean>(false);
-  const [passError, setPassError] = useState<boolean>(false);
-  const [infoMouseEnter, setInfoMouseEnter] = useState<boolean>(false)
+  const session = useSession();
+  const [generatedRoomCode, setgeneratedRoomCode] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
+  const [roomPassword, setRoomPassword] = useState<string>("");
+  const [infoMouseEnter, setInfoMouseEnter] = useState<boolean>(false);
+  const [joinRoomId, setjoinRoomId] = useState<string>("");
+  const [accessToken, setAccessToken] = useState<string>("");
+  const [creating, setCreating] = useState<boolean>(false);
+  const toastId = useRef<string | null>(null)
+  const router = useRouter()
+
+  const { socket, isJoined, loading, joinRoom } = useSocket();
 
   const generateCode = (length: number = 6): string => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -27,9 +37,67 @@ export default function RoomInput() {
     return code;
   };
 
+  useEffect(() => {
+    if (isJoined) {
+      toast.success("Redirecting...", { id: toastId.current! });
+      const pathTitle = title.replaceAll(" ","")
+      router.push(`/room/${pathTitle}--${generatedRoomCode}`)
+    }
+  }, [isJoined])
+
+  const createRoom = async () => {
+    try {
+      setCreating(true);
+      toastId.current = toast.loading("Creating...");
+      const zodChecking = ValidateCreateRoomSchema.safeParse({
+        type: "create_room",
+        roomId: generatedRoomCode,
+        roomTitle: title,
+        roomPassword,
+        accessToken,
+      });
+      if (zodChecking.error) {
+        toast.error("Invalid values", { duration: 800, id: toastId.current });
+        return;
+      }
+      // checking the token is valid or not and check whether user have premium or not
+      const response = await axios.get("https://api.spotify.com/v1/me", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      if (response.data.product !== "premium") {
+        toast.error("Spotify premium needed", { duration: 1000, id: toastId.current });
+        return;
+      }
+      if (socket && !loading) {
+        joinRoom({
+          type: "create_room",
+          roomId: generatedRoomCode,
+          roomTitle: title,
+          roomPassword,
+          accessToken,
+        });
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        if (error.status === 401) {
+          toast.error("Spotify error : invalid token", {id: toastId.current!});
+          return;
+        }
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // const spotifyLogin = async () => {
+  //   await signIn('spotify', {redirect: false})
+  // }
+
   return (
     <div className="mt-12 flex flex-row justify-between space-x-20 px-32">
-      <form className="ml-32 flex max-w-[450px] flex-col space-y-10">
+      <div className="ml-32 flex max-w-[450px] flex-col space-y-10">
         <div className="flex flex-col space-y-1">
           <label htmlFor="createRoom">Create room</label>
           <AlertDialog.Root>
@@ -41,9 +109,9 @@ export default function RoomInput() {
                 Icon={Plus}
                 onClick={async () => {
                   const code = generateCode();
-                  setGeneratedCode(code);
-                  await navigator.clipboard.writeText(code);
-                  toast.success("Code copied!", { duration: 4000 });
+                  setgeneratedRoomCode(code);
+                  // await navigator.clipboard.writeText(code);
+                  // toast.success("Code copied!", { duration: 4000 });
                 }}
               >
                 Create room
@@ -57,25 +125,20 @@ export default function RoomInput() {
                 </AlertDialog.Title>
                 <AlertDialog.Description className="mb-5 mt-[15px] flex flex-col">
                   <span className="text-center font-mono text-2xl font-semibold leading-10 tracking-widest text-blue-700">
-                    {generatedCode}
+                    {generatedRoomCode}
                   </span>
                   <label className="mt-2 pl-0.5 text-sm text-black">
                     Enter room title
                   </label>
                   <Input
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      if (e.target.value.length < 8) {
-                        setTitleError(true);
-                      } else {
-                        setTitleError(false);
-                        setRoomPassword(e.target.value);
-                      }
+                      setTitle(e.target.value);
                     }}
                     placeholder="enter room title"
                     className="mt-2 w-full tracking-tight text-neutral-800"
-                    type="password"
+                    type="text"
                   />
-                  {titleError ? (
+                  {title.length > 0 && title.length < 10 ? (
                     <span className="mt-2 text-sm text-red-400">
                       Title must be at least 10 characters
                     </span>
@@ -85,52 +148,63 @@ export default function RoomInput() {
                   </label>
                   <Input
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      if (e.target.value.length < 8) {
-                        setPassError(true);
-                      } else {
-                        setPassError(false);
-                        setRoomPassword(e.target.value);
-                      }
+                      setRoomPassword(e.target.value);
                     }}
                     placeholder="enter room password"
                     className="mt-2 w-full tracking-tight text-neutral-800"
                     type="password"
                   />
-                  {passError ? (
+                  {roomPassword.length > 0 && roomPassword.length < 8 ? (
                     <span className="mt-2 text-sm text-red-400">
                       Password must be at least 8 characters
                     </span>
                   ) : null}
-
-                  <span className="mt-2">
-                    <label className="mt-2 flex items-center space-x-2 pl-0.5 text-sm text-black">
-                      <span>Enter spotify token</span>
-                      <Info
-                        className="h-4 w-4 hover:cursor-pointer"
-                        onMouseEnter={() => setInfoMouseEnter(true)}
-                        onMouseLeave={() => setInfoMouseEnter(false)}
+                  {/* {session.data?.user.accessToken ? null : ( */}
+                  <>
+                    <span className="mt-2">
+                      <label className="mt-2 flex items-center space-x-2 pl-0.5 text-sm text-black">
+                        <span>Enter spotify token</span>
+                        <Info
+                          className="h-4 w-4 hover:cursor-pointer"
+                          onMouseEnter={() => setInfoMouseEnter(true)}
+                          onMouseLeave={() => setInfoMouseEnter(false)}
+                        />
+                        {infoMouseEnter ? (
+                          <span className="rounded-lg bg-neutral-700 p-1 text-xs text-white">
+                            token guide
+                          </span>
+                        ) : null}
+                      </label>
+                      <Input
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                          setAccessToken(e.target.value);
+                        }}
+                        placeholder="enter access token"
+                        className="mt-2 w-full text-xs tracking-tight text-neutral-800"
+                        type="text"
                       />
-                      {infoMouseEnter ? (
-                        <span className="rounded-lg bg-neutral-700 p-1 text-xs text-white">
-                          token guide
+                      {accessToken.length > 0 && accessToken.length <= 270 ? (
+                        <span className="mt-2 text-sm text-red-400">
+                          Invalid accessToken
                         </span>
                       ) : null}
+                    </span>
+                    <label className="my-1 flex justify-center text-black">
+                      OR
                     </label>
-                    <Input
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                        console.log(e);
+                    <CustomButton
+                      onClick={async () => {
+                        // await spotifyLogin();
                       }}
-                      placeholder="enter access token"
-                      className="mt-2 w-full tracking-tight text-neutral-800 text-xs"
-                      type="text"
-                    />
-                  </span>
-                  <label className="my-1 flex justify-center text-black">
-                    OR
-                  </label>
-                  <CustomButton className="bg-black text-white hover:opacity-85 transition-opacity duration-200" iconStyle="text-green-400" isLoading={false} Icon={FaSpotify}>
-                    Login with spotify
-                  </CustomButton>
+                      className="bg-black text-white transition-opacity duration-200 hover:opacity-85"
+                      iconStyle="text-green-400"
+                      isLoading={false}
+                      Icon={FaSpotify}
+                    >
+                      Login with spotify
+                    </CustomButton>
+                  </>
+                  {/* )} */}
                 </AlertDialog.Description>
                 <div className="flex justify-end gap-[25px]">
                   <AlertDialog.Cancel asChild>
@@ -138,12 +212,17 @@ export default function RoomInput() {
                       Cancel
                     </button>
                   </AlertDialog.Cancel>
-                  <AlertDialog.Action asChild>
+                  <AlertDialog.Action
+                    asChild
+                    onClick={(e) => e.preventDefault()}
+                  >
                     <CustomButton
                       Icon={null}
-                      isLoading={false}
-                      disabled={true}
-                      className="inline-flex h-[35px] select-none items-center justify-center rounded bg-green-200 px-[15px] font-medium leading-none text-green-700 outline-none outline-offset-1 hover:bg-green-300 focus-visible:outline-2 focus-visible:outline-red7 disabled:cursor-not-allowed"
+                      isLoading={creating}
+                      className="focus-visible:outline-red inline-flex h-[35px] items-center justify-center rounded bg-green-200 px-[15px] font-medium leading-none text-green-700 outline-none outline-offset-1 hover:bg-green-300 focus-visible:outline-2"
+                      onClick={async () => {
+                        await createRoom();
+                      }}
                     >
                       Create
                     </CustomButton>
@@ -160,6 +239,10 @@ export default function RoomInput() {
               id="joinRoom"
               placeholder="enter room id"
               className="tracking-widest"
+              onChange={(e) => {
+                setjoinRoomId(e.target.value.toUpperCase());
+              }}
+              value={joinRoomId}
             />
             <CustomButton
               variant={"ghost"}
@@ -171,7 +254,7 @@ export default function RoomInput() {
             </CustomButton>
           </div>
         </div>
-      </form>
+      </div>
       <div className="border-custom flex max-h-[90vh] min-h-[60vh] w-96 flex-col scroll-smooth rounded-xl border pt-2">
         <span className="flex justify-center text-lg font-semibold">
           Recent joined rooms

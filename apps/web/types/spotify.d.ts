@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+export {}
 declare global {
   interface Window {
     onSpotifyWebPlaybackSDKReady: () => void;
@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-interface SpotifyPlayer {
+export interface SpotifyPlayer {
   connect: () => boolean;
   disconnect: () => void;
   addListener: (event: string, callback: (data: any) => void) => void;
