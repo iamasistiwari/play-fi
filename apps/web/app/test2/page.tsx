@@ -2,18 +2,19 @@
 
 import { useSocket } from "@/hooks/useSocket";
 import { FromWebSocketMessages, SpotifyTrackType, ToWebSocketMessages } from "@repo/common/type";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 export default function Page() {
   const { socket, loading } = useSocket();
-  const [searchResult, setSearchResult] = useState("");
+  const [searchResult, setSearchResult] = useState<SpotifyTrackType>();
 
   
   const sendMsg = () => {
     if (socket) {
       const sendMsg: ToWebSocketMessages = {
         type: "searchSongs",
-        roomId: "N6XYOT",
+        roomId: "TSB23X",
         song: "risk",
       };
       socket.send(JSON.stringify(sendMsg));
@@ -26,9 +27,8 @@ export default function Page() {
         const data = JSON.parse(event.data) as unknown as FromWebSocketMessages;
         if (data.type === "songs") {
           if (data.message) {
-            setSearchResult(data.message);
-
             const songs = JSON.parse(data.message) as unknown as SpotifyTrackType
+            setSearchResult(songs)
             console.log("LOG TYPE=",songs)
           }
         }
@@ -37,10 +37,28 @@ export default function Page() {
   }, [socket]);
 
   return (
-    <div>
-      <button onClick={() => {
-        sendMsg()
-      }} className="border text-white">Click me</button>
+    <div className="flex flex-col">
+      <button
+        onClick={() => {
+          sendMsg();
+        }}
+        className="max-w-32 border text-white"
+      >
+        Click me
+      </button>
+      <div>
+        {searchResult?.tracks.items.map((value, index) => (
+          <Image
+            key={index}
+            src={
+              value.album.images[1].url
+            }
+            width={200}
+            height={200}
+            alt="any"
+          />
+        ))}
+      </div>
     </div>
   );
 }

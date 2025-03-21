@@ -10,7 +10,7 @@ import {
 } from "react";
 import toast from "react-hot-toast";
 import { getTokenID } from "../actions/getToken";
-import {FromWebSocketMessages} from "@repo/common/type"
+import {FromWebSocketMessages, JoinRoom, RoomMetadata} from "@repo/common/type"
 import { CreateRoom } from "@repo/common/type"
 
 
@@ -18,7 +18,13 @@ interface SocketContexType {
   socket: WebSocket | null;
   loading: boolean;
   isJoined: boolean;
+  metadata: RoomMetadata | undefined;
   joinRoom: ({
+    type,
+    roomId,
+    roomPassword,
+  }: JoinRoom) => void;
+  createRoom: ({
     type,
     roomId,
     roomTitle,
@@ -39,6 +45,7 @@ export function SocketProvider({
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [loading, setLoading] = useState(true);
   const [isJoined, setIsJoined] = useState(false);
+  const [metadata, setMetadata] = useState<RoomMetadata>()
 
   useEffect(() => {
     const initialize = async () => {
@@ -56,6 +63,7 @@ export function SocketProvider({
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data) as unknown as FromWebSocketMessages;
         if(data.type === "joined"){
+          setMetadata(data.metadata)
           setIsJoined(true)
         }
       }
@@ -73,13 +81,34 @@ export function SocketProvider({
     return () => socket?.close();
   }, []);
 
-  const joinRoom = ({ type, roomId, roomTitle, roomPassword, accessToken }: CreateRoom) => {
+  const createRoom = ({
+    type,
+    roomId,
+    roomTitle,
+    roomPassword,
+    accessToken,
+  }: CreateRoom) => {
     const roomMsg = {
       type,
       roomId,
       roomTitle,
       roomPassword,
-      accessToken
+      accessToken,
+    };
+    if (socket) {
+      socket.send(JSON.stringify(roomMsg));
+    }
+  };
+
+  const joinRoom = ({
+    type,
+    roomId,
+    roomPassword,
+  }: JoinRoom) => {
+    const roomMsg = {
+      type,
+      roomId,
+      roomPassword,
     };
     if (socket) {
       socket.send(JSON.stringify(roomMsg));
@@ -87,7 +116,9 @@ export function SocketProvider({
   };
 
   return (
-    <SocketContext.Provider value={{ socket, loading, isJoined, joinRoom }}>
+    <SocketContext.Provider
+      value={{ socket, loading, isJoined, metadata, createRoom, joinRoom }}
+    >
       {children}
     </SocketContext.Provider>
   );

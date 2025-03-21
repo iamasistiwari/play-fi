@@ -10,7 +10,10 @@ import { signIn } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import axios, { AxiosError } from "axios";
 import { useSocket } from "@/hooks/useSocket";
-import { ValidateCreateRoomSchema } from "@repo/common/type";
+import {
+  ValidateCreateRoomSchema,
+  ValidateJoinRoomSchema,
+} from "@repo/common/type";
 import { useRouter } from "next/navigation";
 
 export default function RoomInput() {
@@ -20,12 +23,14 @@ export default function RoomInput() {
   const [roomPassword, setRoomPassword] = useState<string>("");
   const [infoMouseEnter, setInfoMouseEnter] = useState<boolean>(false);
   const [joinRoomId, setjoinRoomId] = useState<string>("");
+  const [joinedRoomPassword, setJoinRoomPassword] = useState<string>("");
   const [accessToken, setAccessToken] = useState<string>("");
   const [creating, setCreating] = useState<boolean>(false);
-  const toastId = useRef<string | null>(null)
-  const router = useRouter()
+  const [joining, setJoining] = useState<boolean>(false);
+  const toastId = useRef<string | null>(null);
+  const router = useRouter();
 
-  const { socket, isJoined, loading, joinRoom } = useSocket();
+  const { socket, isJoined, loading, joinRoom, createRoom } = useSocket();
 
   const generateCode = (length: number = 6): string => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -40,12 +45,12 @@ export default function RoomInput() {
   useEffect(() => {
     if (isJoined) {
       toast.success("Redirecting...", { id: toastId.current! });
-      const pathTitle = title.replaceAll(" ","")
-      router.push(`/room/${pathTitle}--${generatedRoomCode}`)
+      const pathTitle = title.replaceAll(" ", "");
+      router.push(`/room/${pathTitle}--${generatedRoomCode}`);
     }
-  }, [isJoined])
+  }, [isJoined]);
 
-  const createRoom = async () => {
+  const createJoinRoom = async () => {
     try {
       setCreating(true);
       toastId.current = toast.loading("Creating...");
@@ -67,11 +72,14 @@ export default function RoomInput() {
         },
       });
       if (response.data.product !== "premium") {
-        toast.error("Spotify premium needed", { duration: 1000, id: toastId.current });
+        toast.error("Spotify premium needed", {
+          duration: 1000,
+          id: toastId.current,
+        });
         return;
       }
       if (socket && !loading) {
-        joinRoom({
+        createRoom({
           type: "create_room",
           roomId: generatedRoomCode,
           roomTitle: title,
@@ -82,7 +90,9 @@ export default function RoomInput() {
     } catch (error) {
       if (error instanceof AxiosError) {
         if (error.status === 401) {
-          toast.error("Spotify error : invalid token", {id: toastId.current!});
+          toast.error("Spotify error : invalid token", {
+            id: toastId.current!,
+          });
           return;
         }
       }
@@ -91,6 +101,40 @@ export default function RoomInput() {
     }
   };
 
+  const getJoined = () => {
+    try {
+      setJoining(true);
+      toastId.current = toast.loading("Joining...");
+      const zodChecking = ValidateJoinRoomSchema.safeParse({
+        type: "join_room",
+        roomId: joinRoomId,
+        roomPassword: joinedRoomPassword,
+      });
+      if (zodChecking.error) {
+        console.log("ERROR ZOD", zodChecking.error)
+        toast.error("Invalid values", { duration: 800, id: toastId.current });
+        return;
+      }
+      if (socket && !loading) {
+        joinRoom({
+          type: "join_room",
+          roomId: joinRoomId,
+          roomPassword: joinedRoomPassword,
+        });
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        if (error.status === 401) {
+          toast.error("Spotify error : invalid token", {
+            id: toastId.current!,
+          });
+          return;
+        }
+      }
+    } finally {
+      setJoining(false);
+    }
+  };
   // const spotifyLogin = async () => {
   //   await signIn('spotify', {redirect: false})
   // }
@@ -221,7 +265,7 @@ export default function RoomInput() {
                       isLoading={creating}
                       className="focus-visible:outline-red inline-flex h-[35px] items-center justify-center rounded bg-green-200 px-[15px] font-medium leading-none text-green-700 outline-none outline-offset-1 hover:bg-green-300 focus-visible:outline-2"
                       onClick={async () => {
-                        await createRoom();
+                        await createJoinRoom();
                       }}
                     >
                       Create
@@ -232,9 +276,9 @@ export default function RoomInput() {
             </AlertDialog.Portal>
           </AlertDialog.Root>
         </div>
-        <div className="flex flex-col space-y-1">
+        <div className="flex flex-col">
           <label htmlFor="joinRoom">Join room</label>
-          <div className="space-x-3">
+          <div className="flex flex-col space-y-2 mt-2">
             <Input
               id="joinRoom"
               placeholder="enter room id"
@@ -244,11 +288,21 @@ export default function RoomInput() {
               }}
               value={joinRoomId}
             />
+            <Input
+              id="roomPassword"
+              placeholder="enter room password"
+              className="tracking-widest"
+              type="password"
+              onChange={(e) => {
+                setJoinRoomPassword(e.target.value);
+              }}
+            />
             <CustomButton
               variant={"ghost"}
-              className="h-12 w-28 bg-blue-700 tracking-widest"
-              isLoading={false}
+              className="w-full bg-blue-700 tracking-widest"
+              isLoading={joining}
               Icon={null}
+              onClick={getJoined}
             >
               Join
             </CustomButton>
