@@ -18,7 +18,7 @@ wss.on("connection", async (socket: WebSocket, request) => {
     };
     return socket.send(JSON.stringify(sendData));
   }
-  const validation = await verifyUser(token);
+  const validation = verifyUser(socket,token);
   if (!validation) {
     const sendData: FromWebSocketMessages = {
       type: "error",
@@ -26,7 +26,7 @@ wss.on("connection", async (socket: WebSocket, request) => {
     };
     return socket.send(JSON.stringify(sendData));
   }
-  socket.userId = validation;
+  
   socket.on("message", (msg) => {
     try {
       const data = JSON.parse(msg.toString()) as unknown as ToWebSocketMessages;
@@ -45,4 +45,8 @@ wss.on("connection", async (socket: WebSocket, request) => {
       return socket.send("Invalid Format");
     }
   });
+
+  socket.on("close", () => {
+    return RoomManager.getInstance().handleClose(socket)
+  })
 });

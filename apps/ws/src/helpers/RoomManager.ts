@@ -5,7 +5,7 @@ import {
 } from "@repo/common/type";
 import { WebSocket } from "ws";
 import Room from "./Room";
-import { musicRooms } from "./memory";
+import { musicRooms, playerJoinedRooms } from "./memory";
 
 export default class RoomManager {
   private static instance: RoomManager;
@@ -41,6 +41,11 @@ export default class RoomManager {
         const sendMsg: FromWebSocketMessages = {
           type: "joined",
           message: "Lets rock",
+          metadata: {
+            room_title: data.roomTitle,
+            owner_name: socket.userName,
+            joined_persons: 1
+          }
         };
         socket.send(JSON.stringify(sendMsg));
         return;
@@ -75,12 +80,6 @@ export default class RoomManager {
         return socket.send(JSON.stringify(sendMsg));
       }
       room.addPersons(socket);
-      const roomTitle = room.getRoomTitle();
-      const sendMsg: FromWebSocketMessages = {
-        type: "joined",
-        message: `${roomTitle}`,
-      };
-      return socket.send(JSON.stringify(sendMsg));
     }
   }
 
@@ -107,5 +106,15 @@ export default class RoomManager {
     }
     // now person is joined search the song and give back the result
     return room.searchSong(socket, song);
+  }
+
+  handleClose(socket: WebSocket){
+    const joinedRooms = playerJoinedRooms.get(socket.userId)
+    if(!joinedRooms){
+      return
+    }
+    joinedRooms.map((room) => {
+      room
+    })
   }
 }
