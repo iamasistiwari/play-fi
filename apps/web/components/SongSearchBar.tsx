@@ -3,21 +3,24 @@ import React, { useCallback, useEffect, useState } from "react";
 import Input from "./ui/Input";
 import {
   FromWebSocketMessages,
-  SpotifyTrackType,
   ToWebSocketMessages,
+  YoutubeSearchDetails,
 } from "@repo/common/type";
-import { Music2, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import debounce from "debounce";
 import { useSocket } from "@/hooks/useSocket";
+import Image from "next/image";
+import CustomButton from "./ui/CustomButton";
 
 export default function SongSearchBar({
-  socket,
   roomId,
 }: {
   socket: WebSocket;
   roomId: string;
 }) {
-  const [songs, setSongs] = useState<SpotifyTrackType>();
+  const [songs, setSongs] = useState<YoutubeSearchDetails>();
+  const [isInputFocus, setIsInputFocus] = useState<boolean>(false);
+  const { socket, loading } = useSocket();
 
   useEffect(() => {
     if (!socket) return;
@@ -26,9 +29,9 @@ export default function SongSearchBar({
 
       if (data.type === "songs") {
         if (data.message) {
-          const parsedSongs = JSON.parse(data.message) as SpotifyTrackType;
-          setSongs(parsedSongs);
+          const parsedSongs = JSON.parse(data.message) as YoutubeSearchDetails;
           console.log("SONGS", parsedSongs);
+          setSongs(parsedSongs);
         }
       }
     };
@@ -39,45 +42,18 @@ export default function SongSearchBar({
     };
   }, [socket]);
 
-  const exampleArray = [
-    {
-      name: "Risk",
-      artist: "Gracie Abrams",
-      time: "220000",
-    },
-    {
-      name: "Wavy",
-      artist: "Karan Aujla",
-      time: "220000",
-    },
-    {
-      name: "Winning speech",
-      artist: "Gracie Abrams",
-      time: "220000",
-    },
-    {
-      name: "Brown Rang",
-      artist: "Honey Singh",
-      time: "220000",
-    },
-    {
-      name: "Beliver",
-      artist: "Imagine Drangonse",
-      time: "220000",
-    },
-  ];
-
   const handleSearch = useCallback(
     debounce((search: string) => {
-      if (search.length < 2) return;
+      console.log("CAME HERE");
+
+      if (search.length < 2 || !socket || loading) return;
       const sendMsg: ToWebSocketMessages = {
         type: "searchSongs",
         roomId,
         song: search,
       };
-      if (socket) {
-        socket.send(JSON.stringify(sendMsg));
-      }
+      console.log("CAME BELOW");
+      socket.send(JSON.stringify(sendMsg));
     }, 600),
     [],
   );
@@ -89,25 +65,49 @@ export default function SongSearchBar({
           onChange={(e) => {
             handleSearch(e.target.value);
           }}
+          onFocus={() => setIsInputFocus(true)}
+          onBlur={() => setIsInputFocus(false)}
           placeholder="What do you want to play?"
-          className="w-96 rounded-3xl pl-16 text-sm text-neutral-300 transition-colors duration-200 focus:outline-neutral-300"
+          className="w-[420px] rounded-3xl pl-16 text-sm text-neutral-300 transition-colors duration-200 focus:outline-neutral-300"
         />
         <Search className="absolute left-3 top-2 flex h-8 w-8 text-neutral-300" />
       </div>
-      <div className="px-4 space-y-2 py-2 absolute top-16 max-h-96 min-h-20 min-w-96 flex-1 bg-neutral-900 rounded-md backdrop-blur-sm flex-col">
-        {/* {songs?.tracks.items.slice(0, 5).map((value, key) => (
-          <span key={key}>{value.name}</span>
-        ))} */}
-        {exampleArray.map((val, index) => (
-          <div key={index} className="flex items-center text-lg">
-            <Music2 className="w-3 h-3 mr-1" />
-            <div className="flex flex-col">
-              <span>{val.name}</span>
-              <span className="text-xs text-neutral-300">{val.artist}</span>
+      {isInputFocus && (
+        <div className="absolute top-16 w-[420px] flex-1 flex-col space-y-2 rounded-md bg-neutral-900 px-4 py-2 backdrop-blur-sm">
+          {songs?.items.slice(0, 5).map((value, index) => (
+            <div key={index} className="flex justify-between">
+              <div className="flex items-center text-lg">
+                <div className="relative h-10 w-10">
+                  <Image
+                    alt="pic"
+                    className="rounded-full object-cover"
+                    src={`${value.thumbnail.thumbnails[0].url}`}
+                    fill
+                  />
+                </div>
+                <div className="ml-2 flex flex-col">
+                  <span>{value.title.slice(0, 15)}</span>
+                  <span className="text-xs text-neutral-300">
+                    {value.channelTitle}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center justify-center space-x-2">
+                <span className="text-neutral-300">
+                  {value.length.simpleText}
+                </span>
+                <CustomButton
+                  Icon={Plus}
+                  className="h-8 max-w-32 px-3 text-xs"
+                  isLoading={false}
+                >
+                  Add
+                </CustomButton>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

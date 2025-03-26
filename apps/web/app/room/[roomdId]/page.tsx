@@ -1,19 +1,12 @@
 "use client";
 import React from "react";
-import { useParams } from "next/navigation";
 import { useSocket } from "@/hooks/useSocket";
 import RoomNav from "@/components/RoomNav";
+import RoomPlayer from "@/components/RoomPlayer";
 
 export default function page() {
-  const { socket, isJoined, metadata } = useSocket();
-  const params = useParams();
-  const id = params.roomdId as unknown as string;
-  const roomId = id.split("--")[1];
-  console.log("metadata is ", metadata)
-
-  if(!socket || !metadata) return <div>No data</div>
-  
-  // if (!isJoined) {
+  const { socket, loading, roomMetadata } = useSocket();
+  // if (!socket || !roomMetadata || loading){
   //   return (
   //     <div className="flex h-screen items-center justify-center text-2xl">
   //       <svg
@@ -32,11 +25,12 @@ export default function page() {
   //     </div>
   //   );
   // }
-
   return (
     <div>
-      <RoomNav socket={socket} metadata={metadata} />
-      <span>Metadata{JSON.stringify(metadata)}</span>
+      <RoomNav metadata={roomMetadata} />
+      <div className="px-32">
+        <RoomPlayer socket={socket}/>
+      </div>
     </div>
   );
 }

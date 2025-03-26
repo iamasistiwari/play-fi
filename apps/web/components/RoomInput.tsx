@@ -1,16 +1,14 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Input from "./ui/Input";
-import { Info, Plus, UserSearch } from "lucide-react";
+import { Plus } from "lucide-react";
 import CustomButton from "./ui/CustomButton";
 import { AlertDialog } from "radix-ui";
 import toast from "react-hot-toast";
-import { FaSpotify } from "react-icons/fa6";
-import { signIn } from "next-auth/react";
 import { useSession } from "next-auth/react";
-import axios, { AxiosError } from "axios";
 import { useSocket } from "@/hooks/useSocket";
 import {
+  FromWebSocketMessages,
   ValidateCreateRoomSchema,
   ValidateJoinRoomSchema,
 } from "@repo/common/type";
@@ -21,16 +19,18 @@ export default function RoomInput() {
   const [generatedRoomCode, setgeneratedRoomCode] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [roomPassword, setRoomPassword] = useState<string>("");
-  const [infoMouseEnter, setInfoMouseEnter] = useState<boolean>(false);
   const [joinRoomId, setjoinRoomId] = useState<string>("");
   const [joinedRoomPassword, setJoinRoomPassword] = useState<string>("");
-  const [accessToken, setAccessToken] = useState<string>("");
   const [creating, setCreating] = useState<boolean>(false);
   const [joining, setJoining] = useState<boolean>(false);
   const toastId = useRef<string | null>(null);
   const router = useRouter();
 
-  const { socket, isJoined, loading, joinRoom, createRoom } = useSocket();
+  // for spotify
+  // const [accessToken, setAccessToken] = useState<string>("");
+  // const [infoMouseEnter, setInfoMouseEnter] = useState<boolean>(false);
+
+  const { socket, loading, SetRoomMetadata } = useSocket();
 
   const generateCode = (length: number = 6): string => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -43,12 +43,25 @@ export default function RoomInput() {
   };
 
   useEffect(() => {
-    if (isJoined) {
-      toast.success("Redirecting...", { id: toastId.current! });
-      const pathTitle = title.replaceAll(" ", "");
-      router.push(`/room/${pathTitle}--${generatedRoomCode}`);
-    }
-  }, [isJoined]);
+    if (!socket || loading) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      const data = JSON.parse(event.data) as unknown as FromWebSocketMessages;
+
+      if (data.type === "joined" && data.metadata) {
+        toast.success("Redirecting...", { id: toastId.current! });
+        SetRoomMetadata(data.metadata);
+        const pathTitle = data.metadata.room_title.replaceAll(" ", "");
+        router.push(`/room/${pathTitle}--${data.metadata.room_id}`);
+      }
+      if (data.type === "error" && data.message) {
+        toast.error(data.message, { id: toastId.current! });
+        return;
+      }
+    };
+
+    socket.addEventListener("message", handleMessage);
+  }, [socket]);
 
   const createJoinRoom = async () => {
     try {
@@ -59,43 +72,23 @@ export default function RoomInput() {
         roomId: generatedRoomCode,
         roomTitle: title,
         roomPassword,
-        accessToken,
       });
       if (zodChecking.error) {
         toast.error("Invalid values", { duration: 800, id: toastId.current });
         return;
       }
-      // checking the token is valid or not and check whether user have premium or not
-      const response = await axios.get("https://api.spotify.com/v1/me", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      if (response.data.product !== "premium") {
-        toast.error("Spotify premium needed", {
-          duration: 1000,
-          id: toastId.current,
-        });
-        return;
-      }
+
       if (socket && !loading) {
-        createRoom({
+        const roomMsg = {
           type: "create_room",
           roomId: generatedRoomCode,
           roomTitle: title,
           roomPassword,
-          accessToken,
-        });
+        };
+        return socket.send(JSON.stringify(roomMsg));
       }
     } catch (error) {
-      if (error instanceof AxiosError) {
-        if (error.status === 401) {
-          toast.error("Spotify error : invalid token", {
-            id: toastId.current!,
-          });
-          return;
-        }
-      }
+      console.log(error);
     } finally {
       setCreating(false);
     }
@@ -111,33 +104,24 @@ export default function RoomInput() {
         roomPassword: joinedRoomPassword,
       });
       if (zodChecking.error) {
-        console.log("ERROR ZOD", zodChecking.error)
+        console.log("ERROR ZOD", zodChecking.error);
         toast.error("Invalid values", { duration: 800, id: toastId.current });
         return;
       }
       if (socket && !loading) {
-        joinRoom({
+        const roomMsg = {
           type: "join_room",
           roomId: joinRoomId,
           roomPassword: joinedRoomPassword,
-        });
+        };
+        return socket.send(JSON.stringify(roomMsg));
       }
     } catch (error) {
-      if (error instanceof AxiosError) {
-        if (error.status === 401) {
-          toast.error("Spotify error : invalid token", {
-            id: toastId.current!,
-          });
-          return;
-        }
-      }
+      console.log(error);
     } finally {
       setJoining(false);
     }
   };
-  // const spotifyLogin = async () => {
-  //   await signIn('spotify', {redirect: false})
-  // }
 
   return (
     <div className="mt-12 flex flex-row justify-between space-x-20 px-32">
@@ -154,8 +138,6 @@ export default function RoomInput() {
                 onClick={async () => {
                   const code = generateCode();
                   setgeneratedRoomCode(code);
-                  // await navigator.clipboard.writeText(code);
-                  // toast.success("Code copied!", { duration: 4000 });
                 }}
               >
                 Create room
@@ -203,8 +185,9 @@ export default function RoomInput() {
                       Password must be at least 8 characters
                     </span>
                   ) : null}
-                  {/* {session.data?.user.accessToken ? null : ( */}
-                  <>
+
+                  {/* spotify login */}
+                  {/* <>
                     <span className="mt-2">
                       <label className="mt-2 flex items-center space-x-2 pl-0.5 text-sm text-black">
                         <span>Enter spotify token</span>
@@ -247,8 +230,7 @@ export default function RoomInput() {
                     >
                       Login with spotify
                     </CustomButton>
-                  </>
-                  {/* )} */}
+                  </> */}
                 </AlertDialog.Description>
                 <div className="flex justify-end gap-[25px]">
                   <AlertDialog.Cancel asChild>
@@ -278,7 +260,7 @@ export default function RoomInput() {
         </div>
         <div className="flex flex-col">
           <label htmlFor="joinRoom">Join room</label>
-          <div className="flex flex-col space-y-2 mt-2">
+          <div className="mt-2 flex flex-col space-y-2">
             <Input
               id="joinRoom"
               placeholder="enter room id"

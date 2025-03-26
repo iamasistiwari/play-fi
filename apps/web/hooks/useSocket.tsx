@@ -10,27 +10,13 @@ import {
 } from "react";
 import toast from "react-hot-toast";
 import { getTokenID } from "../actions/getToken";
-import {FromWebSocketMessages, JoinRoom, RoomMetadata} from "@repo/common/type"
-import { CreateRoom } from "@repo/common/type"
-
+import { RoomMetadata } from "@repo/common/type";
 
 interface SocketContexType {
   socket: WebSocket | null;
   loading: boolean;
-  isJoined: boolean;
-  metadata: RoomMetadata | undefined;
-  joinRoom: ({
-    type,
-    roomId,
-    roomPassword,
-  }: JoinRoom) => void;
-  createRoom: ({
-    type,
-    roomId,
-    roomTitle,
-    roomPassword,
-    accessToken,
-  }: CreateRoom) => void;
+  roomMetadata: RoomMetadata | undefined;
+  SetRoomMetadata: (data: RoomMetadata) => void;
 }
 
 export const SocketContext = createContext<SocketContexType | undefined>(
@@ -44,8 +30,7 @@ export function SocketProvider({
 }): JSX.Element {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isJoined, setIsJoined] = useState(false);
-  const [metadata, setMetadata] = useState<RoomMetadata>()
+  const [roomMetadata, setRoomMetadata] = useState<RoomMetadata>()
 
   useEffect(() => {
     const initialize = async () => {
@@ -60,14 +45,6 @@ export function SocketProvider({
           : `ws://localhost:7077?token=${token}`;
       const ws = new WebSocket(wsUrl);
 
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data) as unknown as FromWebSocketMessages;
-        if(data.type === "joined"){
-          setMetadata(data.metadata)
-          setIsJoined(true)
-        }
-      }
-
       ws.onopen = () => {
         setSocket(ws);
         setLoading(false);
@@ -81,43 +58,13 @@ export function SocketProvider({
     return () => socket?.close();
   }, []);
 
-  const createRoom = ({
-    type,
-    roomId,
-    roomTitle,
-    roomPassword,
-    accessToken,
-  }: CreateRoom) => {
-    const roomMsg = {
-      type,
-      roomId,
-      roomTitle,
-      roomPassword,
-      accessToken,
-    };
-    if (socket) {
-      socket.send(JSON.stringify(roomMsg));
-    }
-  };
-
-  const joinRoom = ({
-    type,
-    roomId,
-    roomPassword,
-  }: JoinRoom) => {
-    const roomMsg = {
-      type,
-      roomId,
-      roomPassword,
-    };
-    if (socket) {
-      socket.send(JSON.stringify(roomMsg));
-    }
-  };
+  const SetRoomMetadata = (data: RoomMetadata) => {
+    setRoomMetadata(data)
+  }
 
   return (
     <SocketContext.Provider
-      value={{ socket, loading, isJoined, metadata, createRoom, joinRoom }}
+      value={{ socket, loading, SetRoomMetadata, roomMetadata }}
     >
       {children}
     </SocketContext.Provider>

@@ -3,6 +3,7 @@ import { mauve, violet, red, blackA, gray } from "@radix-ui/colors";
 
 
 export default {
+  mode: "jit",
   darkMode: ["class"],
   content: [
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",

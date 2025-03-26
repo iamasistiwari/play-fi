@@ -1,8 +1,31 @@
+"use client"
+import React, { useEffect, useState } from 'react'
 
-import React from 'react'
+export default function RoomPlayer({socket}: {socket: WebSocket}) {
+    const [songQueue, setsongQueue] = useState()
+    
+    useEffect(() => {
+        if(!socket) return
 
-export default function RoomPlayer(roomId: string) {
+        const handleMessage = () => {
+          
+        }
+
+        socket.addEventListener("message", handleMessage)
+
+        return () => {socket.removeEventListener("message", handleMessage)}
+    }, [socket])
+  
+
   return (
-    <div>RoomPlayer</div>
+    <div className='flex justify-between py-10'>
+      <div className='border h-[70vh] w-[35vw] justify-center flex'>
+        <span>Currently playing :</span>
+
+      </div>
+      <div>
+        <span>Player</span>
+      </div>
+    </div>
   )
 }
