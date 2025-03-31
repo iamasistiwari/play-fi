@@ -20,6 +20,8 @@ export default class Room {
   private currentSongQueue: StoreSongs[];
   private TIME_WINDOW = 20 * 60 * 1000;
   private SONG_LIMIT = 3;
+  private currentTrack: StoreSongs | undefined
+  private nextTrack: StoreSongs | undefined
   // key must be like `socket.userId:songId`
   private votingDetails: Map<string, boolean>;
 
@@ -39,6 +41,8 @@ export default class Room {
     this.roomId = roomId;
     this.userLimitSong = new Map();
     this.votingDetails = new Map();
+    this.currentTrack = undefined
+    this.nextTrack = undefined
   }
 
   addPersons(socket: WebSocket) {
@@ -51,21 +55,15 @@ export default class Room {
         room_title: this.roomTitle,
         joined_persons: this.joinedPlayers.size,
         owner_name: this.adminName,
+        queue: this.currentSongQueue,
+        track: {
+          currentTrack: this.currentTrack,
+          nextTrack: this.nextTrack,
+        },
       },
     };
     socket.send(JSON.stringify(sendMsg));
-    this.joinedPlayers.forEach((socket) => {
-      const sendMsg: FromWebSocketMessages = {
-        type: "metadata",
-        metadata: {
-          room_id: this.roomId,
-          room_title: this.roomTitle,
-          joined_persons: this.joinedPlayers.size,
-          owner_name: this.adminName,
-        },
-      };
-      socket.send(JSON.stringify(sendMsg));
-    });
+    this.broadCastMetaData()
   }
   getRoomPassword() {
     return this.roomPassword;
@@ -105,7 +103,6 @@ export default class Room {
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-
     //check current queue length
     if (this.currentSongQueue.length >= 20) {
       const sendMsg: FromWebSocketMessages = {
@@ -116,18 +113,19 @@ export default class Room {
     }
 
     // now check is video length is not greater than 10 min && less than 1
-    const songMinutes = Number(song.length.simpleText.split(":")[0]);
-    if (songMinutes > 10) {
+    const timeSplitedArrays = song.length.simpleText.split(":");
+    if (timeSplitedArrays.length > 2) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
         message: "Cannot add song over 10 minutes",
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    if (songMinutes < 1) {
+    const songMinutes = Number(timeSplitedArrays[0]);
+    if (songMinutes > 10) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
-        message: "Cannot add song less than 1 minute",
+        message: "Cannot add song over 10 minutes",
       };
       return socket.send(JSON.stringify(sendMsg));
     }
@@ -144,7 +142,7 @@ export default class Room {
       (timeStamp) => current_time - timeStamp < this.TIME_WINDOW
     );
     userSongs!.count = userSongs!.timeStamp.length;
-    if (userSongs!.count >= this.SONG_LIMIT) {
+    if (userSongs!.count >= this.SONG_LIMIT && socket.userId !== this.adminId) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
         message: "You can only add up to 3 songs in 20 minutes",
@@ -219,6 +217,8 @@ export default class Room {
           ...val,
         };
       });
+      //again sort array
+      this.currentSongQueue.sort((a, b) => b.votes - a.votes);
       this.broadCastQueue();
     } else {
       this.votingDetails.set(`${socket.userId}:${songId}`, false);
@@ -235,9 +235,55 @@ export default class Room {
           ...val,
         };
       });
+      //again sort array 
+      this.currentSongQueue.sort((a, b) => b.votes - a.votes);
       this.broadCastQueue();
     }
   }
+
+  handleSongChange(socket: WebSocket){
+    //check whether req is by admin or not
+    if(socket.userId !== this.adminId){
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "Admin can only change songs",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    if(this.currentSongQueue.length === 0){
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "no song in the queue",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+
+    this.currentTrack = this.currentSongQueue.shift();
+    this.nextTrack = this.currentSongQueue[0];
+    this.currentSongQueue.sort((a, b) => b.votes - a.votes);
+    this.broadCastQueue()
+  }
+
+  private broadCastMetaData(){
+    this.joinedPlayers.forEach((socket) => {
+      const sendMsg: FromWebSocketMessages = {
+        type: "metadata",
+        metadata: {
+          room_id: this.roomId,
+          room_title: this.roomTitle,
+          joined_persons: this.joinedPlayers.size,
+          owner_name: this.adminName,
+          queue: this.currentSongQueue,
+          track: {
+            currentTrack: this.currentTrack,
+            nextTrack: this.nextTrack,
+          },
+        },
+      };
+      socket.send(JSON.stringify(sendMsg));
+    });
+  }
+
 
   private broadCastQueue() {
     this.joinedPlayers.forEach((socket) => {
@@ -255,7 +301,16 @@ export default class Room {
         type: "queue",
         queue: userSongArray,
       };
+      const sendMsg1: FromWebSocketMessages = {
+        type: "track",
+        track: {
+          currentTrack: this.currentTrack,
+          nextTrack: this.nextTrack
+        }
+      };
       socket.send(JSON.stringify(sendMsg));
+      socket.send(JSON.stringify(sendMsg1));
     });
   }
+
 }

@@ -8,7 +8,6 @@ const PORT = 7077;
 const wss = new WebSocketServer({ port: PORT });
 
 wss.on("connection", async (socket: WebSocket, request) => {
-  console.log("Connected to ", process.pid);
   const queryParams = new URLSearchParams(request.url?.split("?")[1]);
   const token = queryParams.get("token");
   if (!token) {
@@ -30,7 +29,6 @@ wss.on("connection", async (socket: WebSocket, request) => {
   socket.on("message", (msg) => {
     try {
       const data = JSON.parse(msg.toString()) as unknown as ToWebSocketMessages;
-      console.log("DATA =", data);
       if (data.type === "create_room" || data.type === "join_room") {
         return RoomManager.getInstance().handleRoom(socket, data);
       }
@@ -41,6 +39,18 @@ wss.on("connection", async (socket: WebSocket, request) => {
           data.roomId
         );
       }
+      if(data.type === "addSong"){
+        return RoomManager.getInstance().handleAddSong(socket, data)
+      }
+      if(data.type === 'voteSong'){
+        return RoomManager.getInstance().handleVote(socket, data)
+      }
+
+      if(data.type === "playNext"){
+        console.log("CHANGE CAME", data)
+        return RoomManager.getInstance().handleSongChange(socket, data)
+      }
+
     } catch (error) {
       return socket.send("Invalid Format");
     }
