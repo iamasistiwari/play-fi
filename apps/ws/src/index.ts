@@ -47,9 +47,13 @@ wss.on("connection", async (socket: WebSocket, request) => {
       }
 
       if(data.type === "playNext"){
-        console.log("CHANGE CAME", data)
         return RoomManager.getInstance().handleSongChange(socket, data)
       }
+
+      if(data.type === "songProgress"){
+        return RoomManager.getInstance().handleSongProgress(socket, data)
+      }
+      return socket.send("Invalid payload data");
 
     } catch (error) {
       return socket.send("Invalid Format");

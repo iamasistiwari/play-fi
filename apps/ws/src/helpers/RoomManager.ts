@@ -4,6 +4,7 @@ import {
   ValidateAddSongSchema,
   ValidateCreateRoomSchema,
   ValidatePlayNextSongSchema,
+  ValidateSongProgressSchema,
   ValidateSongVoteSchema,
   YoutubeVideoDetails,
 } from "@repo/common/type";
@@ -71,8 +72,10 @@ export default class RoomManager {
             queue: [],
             track: {
               currentTrack: undefined,
-              nextTrack: undefined,
+              isPlaying: false,
+              currentSongProgress: 0
             },
+            role: "admin"
           },
         };
 
@@ -220,6 +223,36 @@ export default class RoomManager {
     }
 
     return room.handleSongChange(socket)
+  }
+
+  handleSongProgress(socket: WebSocket, data: ToWebSocketMessages){
+    if (data.type !== "songProgress") return;
+    const room = this.musicRooms.get(data.roomId);
+    if (!room) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "room doesn't exists",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    const isPersonJoined = room.checkPersonPresence(socket);
+
+    if (!isPersonJoined) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "you are not part of this room",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    const zodChecking = ValidateSongProgressSchema.safeParse(data);
+    if (!zodChecking.success) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "Invalid song change payload",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    return room.handleSongProgress(socket, zodChecking.data)
   }
 
   async handleClose(socket: WebSocket) {

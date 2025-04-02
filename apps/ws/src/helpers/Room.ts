@@ -6,6 +6,7 @@ import {
   YoutubeVideoDetails,
   StoreSongs,
   VoteSong,
+  SongProgress,
 } from "@repo/common/type";
 import { AxiosError } from "axios";
 
@@ -21,9 +22,10 @@ export default class Room {
   private TIME_WINDOW = 20 * 60 * 1000;
   private SONG_LIMIT = 3;
   private currentTrack: StoreSongs | undefined
-  private nextTrack: StoreSongs | undefined
   // key must be like `socket.userId:songId`
   private votingDetails: Map<string, boolean>;
+  private currentSongProgress: number | undefined;
+  private isPlaying: boolean
 
   constructor(
     socket: WebSocket,
@@ -42,11 +44,13 @@ export default class Room {
     this.userLimitSong = new Map();
     this.votingDetails = new Map();
     this.currentTrack = undefined
-    this.nextTrack = undefined
+    this.currentSongProgress = undefined
+    this.isPlaying = false
   }
 
   addPersons(socket: WebSocket) {
     this.joinedPlayers.set(socket.userId, socket);
+    const profileType = this.adminId === socket.userId ? "admin" : "user";
     const sendMsg: FromWebSocketMessages = {
       type: "joined",
       message: `${this.roomTitle}`,
@@ -57,9 +61,11 @@ export default class Room {
         owner_name: this.adminName,
         queue: this.currentSongQueue,
         track: {
-          currentTrack: this.currentTrack,
-          nextTrack: this.nextTrack,
+          currentSongProgress: this.currentSongProgress,
+          isPlaying: this.isPlaying,
+          currentTrack: this.currentTrack
         },
+        role: profileType
       },
     };
     socket.send(JSON.stringify(sendMsg));
@@ -259,13 +265,26 @@ export default class Room {
     }
 
     this.currentTrack = this.currentSongQueue.shift();
-    this.nextTrack = this.currentSongQueue[0];
     this.currentSongQueue.sort((a, b) => b.votes - a.votes);
+    this.broadCastQueue()
+  }
+
+  handleSongProgress(socket: WebSocket, data: SongProgress){
+    if(socket.userId !== this.adminId){
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "Admin can only change song progress",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    this.currentSongProgress = data.track.currentSongProgress
+    this.isPlaying = data.track.isPlaying
     this.broadCastQueue()
   }
 
   private broadCastMetaData(){
     this.joinedPlayers.forEach((socket) => {
+      const profileType = this.adminId === socket.userId ? "admin" : "user"
       const sendMsg: FromWebSocketMessages = {
         type: "metadata",
         metadata: {
@@ -275,15 +294,16 @@ export default class Room {
           owner_name: this.adminName,
           queue: this.currentSongQueue,
           track: {
+            currentSongProgress: this.currentSongProgress,
+            isPlaying: this.isPlaying,
             currentTrack: this.currentTrack,
-            nextTrack: this.nextTrack,
           },
+          role: profileType,
         },
       };
       socket.send(JSON.stringify(sendMsg));
     });
   }
-
 
   private broadCastQueue() {
     this.joinedPlayers.forEach((socket) => {
@@ -304,13 +324,15 @@ export default class Room {
       const sendMsg1: FromWebSocketMessages = {
         type: "track",
         track: {
+          currentSongProgress: this.currentSongProgress,
+          isPlaying: this.isPlaying,
           currentTrack: this.currentTrack,
-          nextTrack: this.nextTrack
-        }
+        },
       };
       socket.send(JSON.stringify(sendMsg));
       socket.send(JSON.stringify(sendMsg1));
     });
   }
+
 
 }
