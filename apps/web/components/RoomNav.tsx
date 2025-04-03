@@ -5,8 +5,8 @@ import React, { useEffect, useState } from "react";
 import SongSearchBar from "./SongSearchBar";
 
 export default function RoomNav({ metadata }: { metadata: RoomMetadata }) {
-  const [roomMetaData, setRoomMetadata] = useState<RoomMetadata>(metadata);
   const { socket, loading } = useSocket();
+  const [roomMetaData, setRoomMetadata] = useState<RoomMetadata>(metadata);
 
   useEffect(() => {
     if (!socket || loading) return;
@@ -27,7 +27,10 @@ export default function RoomNav({ metadata }: { metadata: RoomMetadata }) {
     <div className="flex h-[72px] items-center justify-between border-b border-neutral-800 px-32 py-2">
       <div>Meta</div>
       <div>
-        <SongSearchBar socket={socket!} roomId={metadata?.room_id || "asdasd"} />
+        <SongSearchBar
+          socket={socket!}
+          roomId={metadata?.room_id || "asdasd"}
+        />
       </div>
       <div>
         <div className="flex space-x-2 text-lg">

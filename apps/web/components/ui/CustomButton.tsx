@@ -1,8 +1,7 @@
-import {Loader2} from "lucide-react"
+import { Loader2 } from "lucide-react";
 import { cva, VariantProps } from "class-variance-authority";
 import { ButtonHTMLAttributes, FC } from "react";
 import { cn } from "../../lib/utils";
-
 
 const buttonVariants = cva(
   "active:scale-95 inline-flex items-center justify-center rounded-lg text-sm transition-all duration-100 font-medium disabled:opacity-50 disabled:pointer-events-none",
@@ -30,7 +29,8 @@ export interface ButtonsProps
     VariantProps<typeof buttonVariants> {
   isLoading: boolean;
   Icon: React.ComponentType<React.SVGProps<SVGSVGElement>> | null;
-  iconStyle?: string
+  iconStyle?: string;
+  loaderStyle?: string;
 }
 
 const CustomButton: FC<ButtonsProps> = ({
@@ -41,6 +41,7 @@ const CustomButton: FC<ButtonsProps> = ({
   Icon,
   isLoading,
   iconStyle,
+  loaderStyle,
   ...props
 }) => {
   return (
@@ -50,9 +51,9 @@ const CustomButton: FC<ButtonsProps> = ({
       disabled={isLoading}
     >
       {isLoading ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <Loader2 className={`h-4 w-4 animate-spin ${loaderStyle}`} />
       ) : Icon === null ? null : (
-        <Icon className={`mr-2 h-4 w-4 ${iconStyle}`} />
+        <Icon className={`${iconStyle} h-4 w-4`} />
       )}
       {children}
     </button>

@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 import { mauve, violet, red, blackA, gray } from "@radix-ui/colors";
 
-
 export default {
   mode: "jit",
   darkMode: ["class"],

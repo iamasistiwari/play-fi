@@ -13,8 +13,8 @@ declare module "next-auth/jwt" {
 declare module "next-auth" {
   interface Session {
     user: User & {
-      id: UserId,
-      accessToken: string | undefined
+      id: UserId;
+      accessToken: string | undefined;
     };
   }
 }
@@ -24,4 +24,3 @@ interface Credentials {
   email: string;
   password: string;
 }
-

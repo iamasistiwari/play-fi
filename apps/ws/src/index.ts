@@ -4,7 +4,6 @@ import RoomManager from "./helpers/RoomManager";
 import { verifyUser } from "./helpers/validation";
 
 const PORT = 7077;
-
 const wss = new WebSocketServer({ port: PORT });
 
 wss.on("connection", async (socket: WebSocket, request) => {
@@ -17,7 +16,7 @@ wss.on("connection", async (socket: WebSocket, request) => {
     };
     return socket.send(JSON.stringify(sendData));
   }
-  const validation = verifyUser(socket,token);
+  const validation = verifyUser(socket, token);
   if (!validation) {
     const sendData: FromWebSocketMessages = {
       type: "error",
@@ -25,7 +24,7 @@ wss.on("connection", async (socket: WebSocket, request) => {
     };
     return socket.send(JSON.stringify(sendData));
   }
-  
+
   socket.on("message", (msg) => {
     try {
       const data = JSON.parse(msg.toString()) as unknown as ToWebSocketMessages;
@@ -39,28 +38,35 @@ wss.on("connection", async (socket: WebSocket, request) => {
           data.roomId
         );
       }
-      if(data.type === "addSong"){
-        return RoomManager.getInstance().handleAddSong(socket, data)
+      if (data.type === "addSong") {
+        return RoomManager.getInstance().handleAddSong(socket, data);
       }
-      if(data.type === 'voteSong'){
-        return RoomManager.getInstance().handleVote(socket, data)
-      }
-
-      if(data.type === "playNext"){
-        return RoomManager.getInstance().handleSongChange(socket, data)
+      if (data.type === "voteSong") {
+        return RoomManager.getInstance().handleVote(socket, data);
       }
 
-      if(data.type === "songProgress"){
-        return RoomManager.getInstance().handleSongProgress(socket, data)
+      if (data.type === "playNext") {
+        return RoomManager.getInstance().handleSongChange(socket, data);
       }
-      return socket.send("Invalid payload data");
 
+      if (data.type === "songProgress") {
+        return RoomManager.getInstance().handleSongProgress(socket, data);
+      }
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "Invalid Payload Data",
+      };
+      return socket.send(JSON.stringify(sendMsg));
     } catch (error) {
-      return socket.send("Invalid Format");
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "Invalid Payload",
+      };
+      return socket.send(JSON.stringify(sendMsg));
     }
   });
 
   socket.on("close", () => {
-    return RoomManager.getInstance().handleClose(socket)
-  })
+    return RoomManager.getInstance().handleClose(socket);
+  });
 });

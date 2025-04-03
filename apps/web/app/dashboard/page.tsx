@@ -3,6 +3,7 @@ import React from "react";
 import { authOptions } from "../../lib/auth";
 import { User } from "lucide-react";
 import RoomInput from "../../components/RoomInput";
+import Image from "next/image";
 
 export default async function page() {
   const session = await getServerSession(authOptions);
@@ -13,8 +14,17 @@ export default async function page() {
           Play-Fi
         </span>
         <div className="flex items-center justify-center space-x-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 p-1.5 text-neutral-400">
-            <User />
+          <span className="relative flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 p-1.5 text-neutral-400">
+            {session?.user.image ? (
+              <Image
+                src={session.user.image}
+                alt="dp"
+                fill
+                className="h-full w-full rounded-full object-fill"
+              />
+            ) : (
+              <User />
+            )}
           </span>
           <span className="">{session?.user.name}</span>
         </div>

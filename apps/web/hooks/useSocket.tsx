@@ -30,7 +30,7 @@ export function SocketProvider({
 }): JSX.Element {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [loading, setLoading] = useState(true);
-  const [roomMetadata, setRoomMetadata] = useState<RoomMetadata>()
+  const [roomMetadata, setRoomMetadata] = useState<RoomMetadata>();
 
   useEffect(() => {
     const initialize = async () => {
@@ -59,8 +59,8 @@ export function SocketProvider({
   }, []);
 
   const SetRoomMetadata = (data: RoomMetadata) => {
-    setRoomMetadata(data)
-  }
+    setRoomMetadata(data);
+  };
 
   return (
     <SocketContext.Provider

@@ -5,8 +5,8 @@ import bcrypt from "bcrypt";
 import { Credentials } from "../types/next-auth";
 import { JWT } from "next-auth/jwt";
 import jwt from "jsonwebtoken";
-import SpotifyProvider from "next-auth/providers/spotify"
-import GoogleProvider from "next-auth/providers/google"
+import SpotifyProvider from "next-auth/providers/spotify";
+import GoogleProvider from "next-auth/providers/google";
 
 const scopes = [
   "user-read-email",
@@ -31,25 +31,30 @@ const params = new URLSearchParams({
 
 const LOGIN_URL = `https://accounts.spotify.com/authorize?${params.toString()}`;
 
-
 async function refreshToken(token: JWT) {
-  const params = new URLSearchParams()
-  params.append("grant_type", "refresh_token")
-  params.append("refresh_token", token.refreshToken!)
+  const params = new URLSearchParams();
+  params.append("grant_type", "refresh_token");
+  params.append("refresh_token", token.refreshToken!);
 
   const response = await fetch(`https://accounts.spotify.com/api/token"`, {
     method: "POST",
     headers: {
-      Authorization: "Basic " + Buffer.from( process.env.SPOTIFY_CLIENT! + ":" + process.env.SPOTIFY_SECRET!).toString("base64"),
+      Authorization:
+        "Basic " +
+        Buffer.from(
+          process.env.SPOTIFY_CLIENT! + ":" + process.env.SPOTIFY_SECRET!,
+        ).toString("base64"),
     },
     body: params,
   });
-  const data = await response.json()
+  const data = await response.json();
   return {
     ...token,
     accessToken: data.access_token as unknown as string,
-    refreshToken: (data.refresh_token ?? token.refreshToken) as unknown as string,
-    accessTokenExpires: Date.now() + data.expires_in * 1000 as unknown as number
+    refreshToken: (data.refresh_token ??
+      token.refreshToken) as unknown as string,
+    accessTokenExpires: (Date.now() +
+      data.expires_in * 1000) as unknown as number,
   };
 }
 
@@ -189,4 +194,3 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
-

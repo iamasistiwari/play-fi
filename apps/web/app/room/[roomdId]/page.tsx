@@ -29,7 +29,7 @@ export default function page() {
     <div>
       <RoomNav metadata={roomMetadata} />
       <div className="px-32">
-        <RoomPlayer socket={socket}/>
+        <RoomPlayer intialSongs={roomMetadata?.queue!} />
       </div>
     </div>
   );

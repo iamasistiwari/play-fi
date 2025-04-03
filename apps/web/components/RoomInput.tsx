@@ -139,6 +139,8 @@ export default function RoomInput() {
                   const code = generateCode();
                   setgeneratedRoomCode(code);
                 }}
+                iconStyle="mr-2"
+                loaderStyle="mr-2"
               >
                 Create room
               </CustomButton>
@@ -249,6 +251,8 @@ export default function RoomInput() {
                       onClick={async () => {
                         await createJoinRoom();
                       }}
+                      iconStyle="mr-2"
+                      loaderStyle="mr-2"
                     >
                       Create
                     </CustomButton>
@@ -285,6 +289,8 @@ export default function RoomInput() {
               isLoading={joining}
               Icon={null}
               onClick={getJoined}
+              iconStyle="mr-2"
+              loaderStyle="mr-2"
             >
               Join
             </CustomButton>

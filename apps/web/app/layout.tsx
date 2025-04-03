@@ -3,7 +3,6 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import Provider from "./providers";
 
-
 const poppins = Poppins({
   subsets: ["latin"],
   weight: ["400", "600", "700"],

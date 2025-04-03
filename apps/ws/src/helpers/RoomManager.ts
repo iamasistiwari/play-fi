@@ -6,30 +6,23 @@ import {
   ValidatePlayNextSongSchema,
   ValidateSongProgressSchema,
   ValidateSongVoteSchema,
-  YoutubeVideoDetails,
 } from "@repo/common/type";
 import { WebSocket } from "ws";
 import Room from "./Room";
-import dotenv from "dotenv"
+import dotenv from "dotenv";
 import Redis from "ioredis";
-dotenv.config()
+dotenv.config();
 
-type RedisRoomType =  {
-  "roomTitle": string,
-  "roomPassword": string,
-  "roomId": string,
-  "roomAdminId": string,
-} | {}
 
 export default class RoomManager {
-  private musicRooms: Map<string, Room>
+  private musicRooms: Map<string, Room>;
   private static instance: RoomManager;
-  private redisClient: Redis
+  private redisClient: Redis;
 
   private constructor() {
     const redis_url = process.env.REDIS_URL;
     this.redisClient = new Redis(redis_url!);
-    this.musicRooms = new Map()
+    this.musicRooms = new Map();
   }
   public static getInstance() {
     if (!RoomManager.instance) {
@@ -59,7 +52,10 @@ export default class RoomManager {
           return socket.send(JSON.stringify(sendMsg));
         }
 
-        this.musicRooms.set(data.roomId, new Room(socket, data.roomTitle, data.roomPassword, data.roomId))
+        this.musicRooms.set(
+          data.roomId,
+          new Room(socket, data.roomTitle, data.roomPassword, data.roomId),
+        );
 
         const sendMsg: FromWebSocketMessages = {
           type: "joined",
@@ -73,21 +69,21 @@ export default class RoomManager {
             track: {
               currentTrack: undefined,
               isPlaying: false,
-              currentSongProgress: 0
+              currentSongProgress: 0,
+              currentSongDuration: undefined,
+              currentSongProgressINsecond: undefined,
             },
-            role: "admin"
+            role: "admin",
           },
         };
 
         return socket.send(JSON.stringify(sendMsg));
-
       } catch (error) {
         const sendMsg: FromWebSocketMessages = {
           type: "error",
           message: "Something went wrong",
         };
         return socket.send(JSON.stringify(sendMsg));
-        
       }
     }
     if (data.type === "join_room") {
@@ -97,7 +93,7 @@ export default class RoomManager {
           type: "error",
           message: "Room not exists",
         };
-        return socket.send(JSON.stringify(sendMsg))
+        return socket.send(JSON.stringify(sendMsg));
       }
       const roomPassword = room.getRoomPassword();
       const checkPassword = roomPassword === data.roomPassword;
@@ -134,7 +130,7 @@ export default class RoomManager {
     return room.searchSong(socket, song);
   }
 
-  handleAddSong(socket: WebSocket, data: ToWebSocketMessages){
+  handleAddSong(socket: WebSocket, data: ToWebSocketMessages) {
     const room = this.musicRooms.get(data.roomId);
     if (!room) {
       const sendMsg: FromWebSocketMessages = {
@@ -152,19 +148,19 @@ export default class RoomManager {
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    const zodChecking = ValidateAddSongSchema.safeParse(data)
-    if(!zodChecking.success){
+    const zodChecking = ValidateAddSongSchema.safeParse(data);
+    if (!zodChecking.success) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
         message: "Invalid song payload",
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    return room.addSongToQueue(socket, zodChecking.data.songToAdd)
+    return room.addSongToQueue(socket, zodChecking.data.songToAdd);
   }
 
-  handleVote(socket: WebSocket, data: ToWebSocketMessages){
-    if(data.type !== "voteSong") return
+  handleVote(socket: WebSocket, data: ToWebSocketMessages) {
+    if (data.type !== "voteSong") return;
     const room = this.musicRooms.get(data.roomId);
     if (!room) {
       const sendMsg: FromWebSocketMessages = {
@@ -190,11 +186,10 @@ export default class RoomManager {
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    return room.voteSong(socket ,data.songToVoteId)
-
+    return room.voteSong(socket, data.songToVoteId);
   }
 
-  handleSongChange(socket: WebSocket, data: ToWebSocketMessages){
+  handleSongChange(socket: WebSocket, data: ToWebSocketMessages) {
     if (data.type !== "playNext") return;
     const room = this.musicRooms.get(data.roomId);
     if (!room) {
@@ -222,10 +217,10 @@ export default class RoomManager {
       return socket.send(JSON.stringify(sendMsg));
     }
 
-    return room.handleSongChange(socket)
+    return room.handleSongChange(socket);
   }
 
-  handleSongProgress(socket: WebSocket, data: ToWebSocketMessages){
+  handleSongProgress(socket: WebSocket, data: ToWebSocketMessages) {
     if (data.type !== "songProgress") return;
     const room = this.musicRooms.get(data.roomId);
     if (!room) {
@@ -252,15 +247,11 @@ export default class RoomManager {
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    return room.handleSongProgress(socket, zodChecking.data)
+    return room.handleSongProgress(socket, zodChecking.data);
   }
 
   async handleClose(socket: WebSocket) {
-
     //get its joinedRooms
-
     //check user exists in any room or not
-  
-
   }
 }
