@@ -1,29 +1,24 @@
 "use client";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useRef, useState } from "react";
 import Input from "./ui/Input";
 import {
   FromWebSocketMessages,
   ToWebSocketMessages,
   YoutubeSearchDetails,
 } from "@repo/common/type";
-import { Plus, Search, TrendingUp } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import debounce from "debounce";
 import { useSocket } from "@/hooks/useSocket";
 import Image from "next/image";
 import CustomButton from "./ui/CustomButton";
 import toast from "react-hot-toast";
 
-export default function SongSearchBar({
-  roomId,
-}: {
-  socket: WebSocket;
-  roomId: string;
-}) {
+function SongSearchBar({ socket }: { socket: WebSocket }) {
   const [isAdding, setIsAdding] = useState<boolean>(false);
   const dropDownRef = useRef<HTMLDivElement>(null);
   const [songs, setSongs] = useState<YoutubeSearchDetails>();
   const [isInputFocus, setIsInputFocus] = useState<boolean>(false);
-  const { socket, loading } = useSocket();
+  const { loading, roomMetadata } = useSocket();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,7 +62,7 @@ export default function SongSearchBar({
       if (search.length < 2 || !socket || loading) return;
       const sendMsg: ToWebSocketMessages = {
         type: "searchSongs",
-        roomId,
+        roomId: roomMetadata?.room_id!,
         song: search,
       };
       socket.send(JSON.stringify(sendMsg));
@@ -82,7 +77,7 @@ export default function SongSearchBar({
       if (songToAdd && socket) {
         const sendMsg: ToWebSocketMessages = {
           type: "addSong",
-          roomId,
+          roomId: roomMetadata?.room_id!,
           songToAdd,
         };
         socket.send(JSON.stringify(sendMsg));
@@ -164,3 +159,5 @@ export default function SongSearchBar({
     </div>
   );
 }
+
+export default memo(SongSearchBar, (prev, next) => prev.socket === next.socket);

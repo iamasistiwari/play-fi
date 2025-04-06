@@ -4,6 +4,7 @@ import { authOptions } from "../../lib/auth";
 import { User } from "lucide-react";
 import RoomInput from "../../components/RoomInput";
 import Image from "next/image";
+import RecentlyJoined from "@/components/RecentlyJoined";
 
 export default async function page() {
   const session = await getServerSession(authOptions);
@@ -30,9 +31,12 @@ export default async function page() {
         </div>
       </nav>
       {/* input and recent */}
-      <div>
+      <div className="flex justify-between px-32 mt-10">
         <div>
           <RoomInput />
+        </div>
+        <div>
+          <RecentlyJoined />
         </div>
       </div>
     </div>

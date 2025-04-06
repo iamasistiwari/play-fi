@@ -2,7 +2,6 @@
 import { useSocket } from "@/hooks/useSocket";
 import {
   FromWebSocketMessages,
-  SongProgress,
   StoreSongs,
   ToWebSocketMessages,
   YoutubeVideoDetails,
@@ -33,19 +32,21 @@ export default function RoomPlayer({
   intialSongs: StoreSongs[];
 }) {
   const { socket, roomMetadata } = useSocket();
-  const [songQueue, setSongQueue] = useState<StoreSongs[]>(intialSongs);
   const playerRef = useRef<ReactPlayer | null>(null);
-  const [currentlyPlayingSong, setCurrentlyPlayingSong] = useState<
-    YoutubeVideoDetails | undefined
-  >(roomMetadata?.track.currentTrack);
+  const [songQueue, setSongQueue] = useState<StoreSongs[]>(intialSongs);
   const [isChangingSong, setIsChangingSong] = useState<boolean>(false);
+  const [isPlayerReady, setIsPlayerReady] = useState<boolean>(false);
+  const [playingSong, setPlayingSong] = useState<boolean>(false);
+  const [currentVolume, setCurrentVolume] = useState<number>(0.5);
+  const [songProgresMeta, setSongProgressMeta] = useState<
+    SONG_METADATA | undefined
+  >();
   const [songProgress, setSongProgress] = useState(
     roomMetadata?.track.currentSongProgress || 0,
   );
-  const [currentVolume, setCurrentVolume] = useState<number>(0.5);
-  const [playingSong, setPlayingSong] = useState<boolean>(false);
-  const [isPlayerReady, setIsPlayerReady] = useState<boolean>(false);
-  const [songProgresMeta, setSongProgressMeta] = useState< SONG_METADATA | undefined>()
+  const [currentlyPlayingSong, setCurrentlyPlayingSong] = useState<
+    YoutubeVideoDetails | undefined
+  >(roomMetadata?.track.currentTrack);
 
   useEffect(() => {
     if (!socket) return;
@@ -64,7 +65,7 @@ export default function RoomPlayer({
           if (data.track.currentSongProgress && roomMetadata?.role === "user") {
             setSongProgress(data.track.currentSongProgress);
             setPlayingSong(data.track.isPlaying);
-            setSongProgressMeta(data.track)
+            setSongProgressMeta(data.track);
           }
         }
       }
@@ -117,7 +118,6 @@ export default function RoomPlayer({
 
   const handleVote = (index: number) => {
     if (socket && roomMetadata && songQueue[index] !== undefined) {
-
       const messageToSend: ToWebSocketMessages = {
         type: "voteSong",
         roomId: roomMetadata.room_id,
@@ -136,7 +136,7 @@ export default function RoomPlayer({
           isPlaying: playingSong,
           currentSongProgress: songProgress,
           currentSongDuration: playerRef.current?.getDuration(),
-          currentSongProgressINsecond: playerRef.current?.getCurrentTime()
+          currentSongProgressINsecond: playerRef.current?.getCurrentTime(),
         },
       };
       socket.send(JSON.stringify(messageToSend));
@@ -144,7 +144,7 @@ export default function RoomPlayer({
   }, [songProgress, playingSong]);
 
   const handlePlayNext = () => {
-    setIsChangingSong(true)
+    setIsChangingSong(true);
     if (socket && roomMetadata && roomMetadata.role === "admin") {
       const messageToSend: ToWebSocketMessages = {
         type: "playNext",
@@ -467,7 +467,11 @@ export default function RoomPlayer({
                 </span>
                 <div className="mt-4 flex items-center justify-center space-x-4 rounded-xl border border-neutral-500">
                   <span className="font-semibold">
-                    <CurrentDuration playerRef={playerRef} role={roomMetadata?.role} songMetaData={songProgresMeta}/>
+                    <CurrentDuration
+                      playerRef={playerRef}
+                      role={roomMetadata?.role}
+                      songMetaData={songProgresMeta}
+                    />
                   </span>
                   <div className="flex items-center justify-center">
                     <div className="select-none">{currentVolume * 100}</div>
@@ -475,8 +479,6 @@ export default function RoomPlayer({
                   </div>
                 </div>
               </div>
-
-              {/* audio player */}
 
               <div
                 className={`${roomMetadata?.role === "admin" ? "flex items-center justify-center space-x-5" : "hidden"}`}

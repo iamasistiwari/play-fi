@@ -251,7 +251,6 @@ export default class RoomManager {
   }
 
   async handleClose(socket: WebSocket) {
-    //get its joinedRooms
-    //check user exists in any room or not
+    // handle here
   }
 }

@@ -92,7 +92,6 @@
   }
 }
 
-
 .player-controls {
   display: flex;
   justify-content: center;
@@ -126,10 +125,7 @@
   margin-right: 8px;
 }
 
-
-
 .vds-slider {
-  /* CSS variables available for customization (defaults shown). */
   --media-slider-width: 100%;
   --media-slider-height: 48px;
 

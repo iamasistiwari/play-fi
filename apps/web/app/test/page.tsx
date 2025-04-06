@@ -1,122 +1,31 @@
-"use client";
-import React, { useEffect, useRef, useState } from "react";
-import ReactPlayer from "react-player";
-import { Line, Circle } from "rc-progress";
-import { useYoutube } from "react-youtube-music-player";
-
-export default function page() {
-  const [currentPlayedSongs, setCurrentState] = useState<number | undefined>();
-  const playerRef = useRef<ReactPlayer | null>(null)
-  
-
-  useEffect(() => {
-    const time = playerRef.current?.getCurrentTime()
-    console.log("current time", time)
-
-  }, [playerRef.current?.getCurrentTime()])
+"use client"
+import Ballpit from '@/components/ui/Ball';
+import React, { useState } from 'react'
 
 
+export default function Page() {
+  const [count, setCount] = useState(1);
   return (
-    <div>
-      <ReactPlayer
-        url={`https://www.youtube.com/watch?v=C3abvkg-qrY`}
-        ref={playerRef}
-        controls
-        width={200}
-        height={200}
-        
-        onProgress={(playedSongs) => {
-          console.log(playedSongs);
-          setCurrentState(playedSongs.played * 100);
-        }}
-      />
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="h-96 w-96 border">
+        <Ballpit
+          key={count}
+          maxSize={0.1}
+          colors={[0xff0000, 0x00ff00, 0x0000ff]}
+          count={count}
+          gravity={0.65}
+          friction={0.99}
+          wallBounce={1.4}
+          followCursor={true}
+          size0={0.4}
+          maxVelocity={200}
+          maxY={1}
+          className="pb-0.5 opacity-15"
+        />
+      </div>
+      <div className="border p-2">
+        <button onClick={() => setCount((c) => c + 1)}>inc</button>
+      </div>
     </div>
   );
 }
-
-// import { useState } from "react";
-// import { PlayerState, useYoutube } from "react-youtube-music-player";
-// import {
-//   IoPause,
-//   IoPlay,
-//   IoPlaySkipBack,
-//   IoPlaySkipForward,
-//   IoStop,
-//   IoVolumeHigh,
-//   IoVolumeMedium,
-//   IoVolumeLow,
-//   IoVolumeMute,
-// } from "react-icons/io5";
-
-// export default function App() {
-//   // 🎵 Store the song ID in state
-//   const [videoId, setVideoId] = useState("XTp5jaRU3Ws"); // Default Song ID
-
-//   const { playerDetails, actions } = useYoutube({
-//     id: videoId, // Use the state as video ID
-//     type: "video",
-//   });
-
-//   // 🎵 List of song IDs (Replace with your own)
-//   const songList = [
-//     "LbqzhXWl33U", // Song 1
-//     "3JZ_D3ELwOQ", // Song 2
-//     "dQw4w9WgXcQ", // Song 3
-//   ];
-
-//   let currentSongIndex = songList.indexOf(videoId);
-
-//   // 🔥 Function to change the song
-//   const changeSong = () => {
-//     const nextIndex = (currentSongIndex + 1) % songList.length; // Cycle through songs
-//     setVideoId(songList[nextIndex]!); // Update state
-//   };
-
-//   const renderVolumeIcon = () => {
-//     if (playerDetails.volume === 0) return <IoVolumeMute />;
-//     if (playerDetails.volume <= 30) return <IoVolumeLow />;
-//     if (playerDetails.volume <= 60) return <IoVolumeMedium />;
-//     return <IoVolumeHigh />;
-//   };
-
-//   return (
-//     <div className="App">
-//       <h1>react-youtube-music-player</h1>
-//       <div className="video-title">{playerDetails.title}</div>
-//       <div className="player-controls">
-//         <button onClick={actions.previousVideo}>
-//           <IoPlaySkipBack />
-//         </button>
-//         {playerDetails.state === PlayerState.PLAYING ? (
-//           <button className="emphasised" onClick={actions.pauseVideo}>
-//             <IoPause />
-//           </button>
-//         ) : (
-//           <button className="emphasised" onClick={actions.playVideo}>
-//             <IoPlay />
-//           </button>
-//         )}
-//         <button onClick={actions.stopVideo}>
-//           <IoStop />
-//         </button>
-//         <button onClick={actions.nextVideo}>
-//           <IoPlaySkipForward />
-//         </button>
-
-//         {/* 🔥 Button to Change Song */}
-//         <button onClick={changeSong}>Change Song</button>
-
-//         <div className="">
-//           {renderVolumeIcon()}
-//           <input
-//             type="range"
-//             value={playerDetails.volume ?? 0}
-//             min={0}
-//             max={100}
-//             onChange={(event) => actions.setVolume(event.target.valueAsNumber)}
-//           />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
