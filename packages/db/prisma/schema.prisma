@@ -8,8 +8,37 @@ datasource db {
 }
 
 model User {
-  id String           @id @default(uuid())
-  name String
-  email String        @unique
-  password String
+  id          String @id @default(uuid())
+  email       String @unique
+  name        String
+  password    String?
+  provider    String
+  hostedSpace Room[] @relation("Hosted")
+  joinedRooms Room[] @relation("JoinedRooms")
+}
+
+model Room {
+  roomId        String @id
+  ownerId       String
+  ownerName     String
+  roomName      String
+  roomPassword  String
+  created_At    String
+  maxJoinedUser Int
+  queue         Song[]
+  user          User   @relation("Hosted", fields: [ownerId], references: [id])
+  joinedUser    User[] @relation("JoinedRooms")
+}
+
+model Song {
+  id           String @unique @default(uuid())
+  roomId       String
+  songId       String
+  bigImg       String @default("")
+  smallImg     String @default("")
+  title        String
+  channelTitle String
+  length       String
+  addedTime    String
+  room         Room   @relation(fields: [roomId], references: [roomId], onDelete: Cascade)
 }
