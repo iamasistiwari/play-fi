@@ -42,7 +42,7 @@ export default function RoomNav() {
           <div className="flex space-x-2 text-lg">
             <span>{currentMetadata?.room_title || "Ajaoo Mache"}</span>
           </div>
-          <div className="flex space-x-2 text-sm">
+          <div className="flex space-x-2 text-sm text-neutral-400">
             <span>{currentMetadata?.owner_name || "Ashish"}</span>
             <div className="flex justify-center items-center space-x-0.5">
               <Eye className="size-4"/>

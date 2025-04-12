@@ -37,16 +37,21 @@ export default function RoomPlayer({
   const [isChangingSong, setIsChangingSong] = useState<boolean>(false);
   const [isPlayerReady, setIsPlayerReady] = useState<boolean>(false);
   const [playingSong, setPlayingSong] = useState<boolean>(false);
-  const [currentVolume, setCurrentVolume] = useState<number>(0.5);
+  const [currentVolume, setCurrentVolume] = useState<number>(0.6);
   const [songProgresMeta, setSongProgressMeta] = useState<
     SONG_METADATA | undefined
-  >();
+  >(roomMetadata?.track);
   const [songProgress, setSongProgress] = useState(
     roomMetadata?.track.currentSongProgress || 0,
   );
   const [currentlyPlayingSong, setCurrentlyPlayingSong] = useState<
     YoutubeVideoDetails | undefined
   >(roomMetadata?.track.currentTrack);
+
+
+  useEffect(() => {
+    console.log("RE RENDER",songProgresMeta)
+  })
 
   useEffect(() => {
     if (!socket) return;
@@ -363,7 +368,7 @@ export default function RoomPlayer({
         {songQueue.length !== 0 ? (
           <div className="scrollbar-thumb-rounded scrollbar-thumb-blue scrollbar-track-blue-lighter scrollbar-w-2 grid h-full w-full grid-flow-row gap-y-5 overflow-y-auto scroll-smooth">
             {songQueue.map((song, index) => (
-              <div key={index} className="flex h-20 justify-between">
+              <div key={song.id} className="flex h-20 justify-between">
                 <div className="flex space-x-1">
                   <Image
                     src={

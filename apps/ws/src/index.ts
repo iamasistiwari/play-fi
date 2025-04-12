@@ -1,5 +1,5 @@
 import { WebSocket, WebSocketServer } from "ws";
-import { FromWebSocketMessages, ToWebSocketMessages } from "@repo/common/type";
+import { FromWebSocketMessages, ToWebSocketMessages, ValidateToWebSocketSchema } from "@repo/common/type";
 import RoomManager from "./helpers/RoomManager";
 import { verifyUser } from "./helpers/validation";
 
@@ -27,7 +27,9 @@ wss.on("connection", async (socket: WebSocket, request) => {
 
   socket.on("message", (msg) => {
     try {
-      const data = JSON.parse(msg.toString()) as unknown as ToWebSocketMessages;
+      const json = JSON.parse(msg.toString())
+      const data = ValidateToWebSocketSchema.parse(json)
+
       if (data.type === "create_room" || data.type === "join_room") {
         return RoomManager.getInstance().handleRoom(socket, data);
       }

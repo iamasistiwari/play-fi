@@ -1,6 +1,6 @@
 "use client";
 import { StoreSongs } from "@repo/common/type";
-import React, { RefObject, useEffect, useState } from "react";
+import React, { memo, RefObject, useEffect, useState } from "react";
 import ReactPlayer from "react-player";
 
 export interface SONG_METADATA {
@@ -20,10 +20,15 @@ export default function CurrentDuration({
   role: "user" | "admin" | undefined;
   songMetaData: SONG_METADATA | undefined; 
 }) {
-  const [songDuration, setSongDuration] = useState<number>(0);
-  const [durationPlayed, setDurationPlayed] = useState<number>(0);
+  const [songDuration, setSongDuration] = useState<number | undefined>(songMetaData?.currentSongDuration);
+  const [durationPlayed, setDurationPlayed] = useState<number | undefined>(songMetaData?.currentSongProgress);
 
   useEffect(() => {
+    console.log("INSIDE DURATIOn",songMetaData);
+  })
+
+  useEffect(() => {
+    
     if (playerRef.current && role === "admin") {
       setSongDuration(playerRef.current.getDuration());
       setDurationPlayed(playerRef.current.getCurrentTime());
@@ -36,26 +41,29 @@ export default function CurrentDuration({
     ) {
       setSongDuration(songMetaData.currentSongDuration);
       setDurationPlayed(songMetaData.currentSongProgressINsecond);
+      console.log("HERE INSIDE ROLE USER", songMetaData)
     }
   }, [playerRef.current?.getCurrentTime(), songMetaData]);
 
   const getFull = () => {
-
-    const totalSM = new Intl.NumberFormat("en-US", {
-      minimumIntegerDigits: 1,
-    }).format(Math.floor(songDuration / 60));
-    const totalSS = new Intl.NumberFormat("en-US", {
-      minimumIntegerDigits: 2,
-    }).format(Math.floor(songDuration % 60));
-
-    const minutes = new Intl.NumberFormat("en-US", {
-      minimumIntegerDigits: 1,
-    }).format(Math.floor(durationPlayed / 60));
-
-    const seconds = new Intl.NumberFormat("en-US", {
-      minimumIntegerDigits: 2,
-    }).format(Math.floor(durationPlayed % 60));
-    return `${minutes}:${seconds} / ${totalSM}:${totalSS}`;
+    if(songDuration && durationPlayed){
+      const totalSM = new Intl.NumberFormat("en-US", {
+        minimumIntegerDigits: 1,
+      }).format(Math.floor(songDuration / 60));
+      const totalSS = new Intl.NumberFormat("en-US", {
+        minimumIntegerDigits: 2,
+      }).format(Math.floor(songDuration % 60));
+  
+      const minutes = new Intl.NumberFormat("en-US", {
+        minimumIntegerDigits: 1,
+      }).format(Math.floor(durationPlayed / 60));
+  
+      const seconds = new Intl.NumberFormat("en-US", {
+        minimumIntegerDigits: 2,
+      }).format(Math.floor(durationPlayed % 60));
+      return `${minutes}:${seconds} / ${totalSM}:${totalSS}`;
+    }
+    return `0:00 / 0:00`;
   };
   return <>{getFull()}</>;
 }

@@ -5,7 +5,6 @@ import { Plus } from "lucide-react";
 import CustomButton from "./ui/CustomButton";
 import { AlertDialog } from "radix-ui";
 import toast from "react-hot-toast";
-import { useSession } from "next-auth/react";
 import { useSocket } from "@/hooks/useSocket";
 import {
   FromWebSocketMessages,
@@ -15,7 +14,6 @@ import {
 import { useRouter } from "next/navigation";
 
 export default function RoomInput() {
-  const session = useSession();
   const [generatedRoomCode, setgeneratedRoomCode] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [roomPassword, setRoomPassword] = useState<string>("");
@@ -48,6 +46,7 @@ export default function RoomInput() {
         toast.success("Redirecting...", { id: toastId.current! });
         SetRoomMetadata(data.metadata);
         const pathTitle = data.metadata.room_title.replaceAll(" ", "");
+        setCreating(false);
         router.push(`/room/${pathTitle}--${data.metadata.room_id}`);
       }
       if (data.type === "error" && data.message) {
@@ -85,8 +84,6 @@ export default function RoomInput() {
       }
     } catch (error) {
       console.log(error);
-    } finally {
-      setCreating(false);
     }
   };
 

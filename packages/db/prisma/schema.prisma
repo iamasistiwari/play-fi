@@ -14,7 +14,7 @@ model User {
   password    String?
   provider    String
   hostedSpace Room[] @relation("Hosted")
-  joinedRooms Room[] @relation("JoinedRooms")
+  joinedRooms RoomUser[]
 }
 
 model Room {
@@ -23,22 +23,29 @@ model Room {
   ownerName     String
   roomName      String
   roomPassword  String
-  created_At    String
+  created_At    DateTime
   maxJoinedUser Int
   queue         Song[]
   user          User   @relation("Hosted", fields: [ownerId], references: [id])
-  joinedUser    User[] @relation("JoinedRooms")
+  joinedUser    RoomUser[] 
+}
+
+model RoomUser {
+  userId String
+  roomId String
+  joinedAt DateTime
+  user User @relation(fields: [userId], references: [id])
+  room Room @relation(fields: [roomId], references: [roomId])
+  @@id([userId, roomId])
 }
 
 model Song {
-  id           String @unique @default(uuid())
-  roomId       String
-  songId       String
+  songId       String @id
   bigImg       String @default("")
   smallImg     String @default("")
   title        String
   channelTitle String
   length       String
-  addedTime    String
-  room         Room   @relation(fields: [roomId], references: [roomId], onDelete: Cascade)
+  addedTime    DateTime
+  room Room[]
 }

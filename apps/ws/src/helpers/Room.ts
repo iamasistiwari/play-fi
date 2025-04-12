@@ -9,6 +9,7 @@ import {
   SongProgress,
 } from "@repo/common/type";
 import { AxiosError } from "axios";
+import Redis from "ioredis";
 
 export default class Room {
   private joinedPlayers: Map<string, WebSocket>;
@@ -25,6 +26,7 @@ export default class Room {
   private currentSongProgress: number | undefined;
   private isPlaying: boolean;
   private currentSongDuration: number | undefined;
+  private highestUser: number
   private currentSongProgressINsecond: number | undefined;
   // key must be like `socket.userId:songId`
   private votingDetails: Map<string, boolean>;
@@ -50,9 +52,15 @@ export default class Room {
     this.currentSongDuration = undefined;
     this.currentSongProgressINsecond = undefined
     this.isPlaying = false;
+    this.highestUser = 1;
   }
 
-  addPersons(socket: WebSocket) {
+  getAdminId(){
+    return this.adminId
+  } 
+
+
+  async addPersons(socket: WebSocket) {
     this.joinedPlayers.set(socket.userId, socket);
     const profileType = this.adminId === socket.userId ? "admin" : "user";
     const sendMsg: FromWebSocketMessages = {
@@ -76,6 +84,10 @@ export default class Room {
     };
     socket.send(JSON.stringify(sendMsg));
     this.broadCastMetaData();
+    if(this.highestUser < this.joinedPlayers.size){
+      this.highestUser = this.joinedPlayers.size
+    }
+    
   }
   getRoomPassword() {
     return this.roomPassword;
@@ -253,14 +265,7 @@ export default class Room {
     }
   }
 
-  handleSongChange(socket: WebSocket) {
-    if (socket.userId !== this.adminId) {
-      const sendMsg: FromWebSocketMessages = {
-        type: "error",
-        message: "Admin can only change songs",
-      };
-      return socket.send(JSON.stringify(sendMsg));
-    }
+  async handleSongChange(socket: WebSocket, redisClient: Redis) {
     if (this.currentSongQueue.length === 0) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
@@ -273,16 +278,24 @@ export default class Room {
     this.currentSongQueue.sort((a, b) => b.votes - a.votes);
     this.broadCastQueue();
     this.broadCastTrack()
+
+    if(this.currentTrack){
+      const pushMessage = {
+        type: "song_added",
+        roomId: this.roomId,
+        songId: this.currentTrack.id,
+        bigImg: this.currentTrack.thumbnail.thumbnails[1]?.url || "",
+        smallImg: this.currentTrack.thumbnail.thumbnails[0]?.url || "",
+        title: this.currentTrack.title,
+        channelTitle: this.currentTrack.channelTitle,
+        length: this.currentTrack.length.simpleText,
+        addedTime: new Date()
+      };
+      await redisClient.lpush("data", JSON.stringify(pushMessage));
+    }
   }
 
   handleSongProgress(socket: WebSocket, data: SongProgress) {
-    if (socket.userId !== this.adminId) {
-      const sendMsg: FromWebSocketMessages = {
-        type: "error",
-        message: "Admin can only change song progress",
-      };
-      return socket.send(JSON.stringify(sendMsg));
-    }
     this.currentSongProgress = data.track.currentSongProgress;
     this.currentSongProgressINsecond = data.track.currentSongProgressINsecond
     this.currentSongDuration = data.track.currentSongDuration
@@ -337,6 +350,9 @@ export default class Room {
 
   private broadCastTrack() {
     this.joinedPlayers.forEach((socket) => {
+      if(socket.userId === this.adminId){
+        return
+      }
       const sendMsg: FromWebSocketMessages = {
         type: "track",
         track: {

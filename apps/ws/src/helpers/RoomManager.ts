@@ -11,8 +11,8 @@ import { WebSocket } from "ws";
 import Room from "./Room";
 import dotenv from "dotenv";
 import Redis from "ioredis";
+import { prisma } from "@repo/db/index";
 dotenv.config();
-
 
 export default class RoomManager {
   private musicRooms: Map<string, Room>;
@@ -21,7 +21,7 @@ export default class RoomManager {
 
   private constructor() {
     const redis_url = process.env.REDIS_URL;
-    this.redisClient = new Redis(redis_url!);
+    this.redisClient = new Redis();
     this.musicRooms = new Map();
   }
   public static getInstance() {
@@ -35,16 +35,16 @@ export default class RoomManager {
   async handleRoom(socket: WebSocket, data: ToWebSocketMessages) {
     if (data.type === "create_room") {
       try {
-        const zodChecking = ValidateCreateRoomSchema.safeParse(data);
-        if (!zodChecking.success) {
+        if (this.musicRooms.get(data.roomId)) {
           const sendMsg: FromWebSocketMessages = {
             type: "error",
-            message: "Invalid payload",
+            message: "Room aldready exists",
           };
           return socket.send(JSON.stringify(sendMsg));
         }
-
-        if (this.musicRooms.get(data.roomId)) {
+        const createdRooms = await this.redisClient.smembers("rooms");
+        const isCreated = createdRooms.includes(data.roomId);
+        if (isCreated) {
           const sendMsg: FromWebSocketMessages = {
             type: "error",
             message: "Room aldready exists",
@@ -54,7 +54,7 @@ export default class RoomManager {
 
         this.musicRooms.set(
           data.roomId,
-          new Room(socket, data.roomTitle, data.roomPassword, data.roomId),
+          new Room(socket, data.roomTitle, data.roomPassword, data.roomId)
         );
 
         const sendMsg: FromWebSocketMessages = {
@@ -77,7 +77,20 @@ export default class RoomManager {
           },
         };
 
-        return socket.send(JSON.stringify(sendMsg));
+        socket.send(JSON.stringify(sendMsg));
+        const pushMessage = {
+          type: "created_room",
+          roomId: data.roomId,
+          ownerId: socket.userId,
+          ownerName: socket.userName,
+          roomName: data.roomTitle,
+          roomPassword: data.roomPassword,
+          created_At: new Date(),
+          maxJoinedUser: 1,
+        };
+        await this.redisClient.lpush("data", JSON.stringify(pushMessage));
+        await this.redisClient.sadd("rooms", data.roomId);
+        return;
       } catch (error) {
         const sendMsg: FromWebSocketMessages = {
           type: "error",
@@ -95,6 +108,17 @@ export default class RoomManager {
         };
         return socket.send(JSON.stringify(sendMsg));
       }
+      //check with the redis that room exits or not
+      const createdRooms = await this.redisClient.smembers("rooms");
+      const isCreated = createdRooms.includes(data.roomId);
+      if (!isCreated) {
+        const sendMsg: FromWebSocketMessages = {
+          type: "error",
+          message: "Room not exists",
+        };
+        return socket.send(JSON.stringify(sendMsg));
+      }
+
       const roomPassword = room.getRoomPassword();
       const checkPassword = roomPassword === data.roomPassword;
 
@@ -106,6 +130,13 @@ export default class RoomManager {
         return socket.send(JSON.stringify(sendMsg));
       }
       room.addPersons(socket);
+      const pushMessage = {
+        type: "join_room",
+        roomId: data.roomId,
+        userId: socket.userId,
+        joinedAt: new Date(),
+      };
+      await this.redisClient.lpush("data", JSON.stringify(pushMessage));
     }
   }
 
@@ -160,38 +191,48 @@ export default class RoomManager {
   }
 
   handleVote(socket: WebSocket, data: ToWebSocketMessages) {
-    if (data.type !== "voteSong") return;
-    const room = this.musicRooms.get(data.roomId);
-    if (!room) {
-      const sendMsg: FromWebSocketMessages = {
-        type: "error",
-        message: "room doesn't exists",
-      };
-      return socket.send(JSON.stringify(sendMsg));
-    }
-    const isPersonJoined = room.checkPersonPresence(socket);
-
-    if (!isPersonJoined) {
-      const sendMsg: FromWebSocketMessages = {
-        type: "error",
-        message: "you are not part of this room",
-      };
-      return socket.send(JSON.stringify(sendMsg));
-    }
-    const zodChecking = ValidateSongVoteSchema.safeParse(data);
-    if (!zodChecking.success) {
+    const zodData = ValidateSongVoteSchema.safeParse(data);
+    if (!zodData.success) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
         message: "Invalid song payload",
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    return room.voteSong(socket, data.songToVoteId);
+    const room = this.musicRooms.get(zodData.data.roomId);
+    if (!room) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "room doesn't exists",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    const isPersonJoined = room.checkPersonPresence(socket);
+
+    if (!isPersonJoined) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "you are not part of this room",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    
+    return room.voteSong(socket, zodData.data.songToVoteId);
   }
 
   handleSongChange(socket: WebSocket, data: ToWebSocketMessages) {
-    if (data.type !== "playNext") return;
-    const room = this.musicRooms.get(data.roomId);
+    const zodData = ValidatePlayNextSongSchema.safeParse(data);
+    if (!zodData.success) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "Invalid song change payload",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    if(zodData.data.type !== "playNext"){
+      return
+    }
+    const room = this.musicRooms.get(zodData.data.roomId);
     if (!room) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
@@ -199,30 +240,30 @@ export default class RoomManager {
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    const isPersonJoined = room.checkPersonPresence(socket);
+    const adminId = room.getAdminId()
+    const isAdmin = socket.userId === adminId
 
-    if (!isPersonJoined) {
+    if (!isAdmin) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
-        message: "you are not part of this room",
+        message: "you are not admin",
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    const zodChecking = ValidatePlayNextSongSchema.safeParse(data);
-    if (!zodChecking.success) {
-      const sendMsg: FromWebSocketMessages = {
-        type: "error",
-        message: "Invalid song change payload",
-      };
-      return socket.send(JSON.stringify(sendMsg));
-    }
-
-    return room.handleSongChange(socket);
+    
+    return room.handleSongChange(socket, this.redisClient);
   }
 
   handleSongProgress(socket: WebSocket, data: ToWebSocketMessages) {
-    if (data.type !== "songProgress") return;
-    const room = this.musicRooms.get(data.roomId);
+    const zodData = ValidateSongProgressSchema.safeParse(data);
+    if (!zodData.success) {
+      const sendMsg: FromWebSocketMessages = {
+        type: "error",
+        message: "Invalid song change payload",
+      };
+      return socket.send(JSON.stringify(sendMsg));
+    }
+    const room = this.musicRooms.get(zodData.data.roomId);
     if (!room) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
@@ -231,23 +272,15 @@ export default class RoomManager {
       return socket.send(JSON.stringify(sendMsg));
     }
     const isPersonJoined = room.checkPersonPresence(socket);
-
-    if (!isPersonJoined) {
+    const adminId = room.getAdminId()
+    if (socket.userId !== adminId) {
       const sendMsg: FromWebSocketMessages = {
         type: "error",
-        message: "you are not part of this room",
+        message: "Admin can only change song progress",
       };
       return socket.send(JSON.stringify(sendMsg));
     }
-    const zodChecking = ValidateSongProgressSchema.safeParse(data);
-    if (!zodChecking.success) {
-      const sendMsg: FromWebSocketMessages = {
-        type: "error",
-        message: "Invalid song change payload",
-      };
-      return socket.send(JSON.stringify(sendMsg));
-    }
-    return room.handleSongProgress(socket, zodChecking.data);
+    return room.handleSongProgress(socket, zodData.data);
   }
 
   async handleClose(socket: WebSocket) {

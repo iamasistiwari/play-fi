@@ -1,0 +1,47 @@
+"use server";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@repo/db/index";
+import { getServerSession } from "next-auth";
+
+export async function getRooms() {
+  const session = await getServerSession(authOptions);
+  try {
+    const result = await prisma.user.findUnique({
+      where: { id: session?.user.id },
+      select: {
+        hostedSpace: {
+          orderBy: {
+            created_At: "desc",
+          },
+        },
+        joinedRooms: {
+          orderBy: {
+            joinedAt: "desc",
+          },
+          include: {
+            room: true,
+          },
+        },
+      },
+    });
+
+    const hosted = (result?.hostedSpace ?? []).map((room) => ({
+      type: "hosted",
+      time: new Date(room.created_At),
+      data: room,
+    }));
+
+    const joined = (result?.joinedRooms ?? []).map((join) => ({
+      type: "joined",
+      time: new Date(join.joinedAt),
+      data: join.room,
+    }));
+
+    const merged = [...hosted, ...joined].sort(
+      (a, b) => b.time.getTime() - a.time.getTime(),
+    );
+    return merged;
+  } catch (error) {
+    return [];
+  }
+}

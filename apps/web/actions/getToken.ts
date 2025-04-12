@@ -1,6 +1,5 @@
 "use server";
 import { cookies } from "next/headers";
-
 type CookieType = { name: string; value: string } | null;
 
 export async function getTokenID() {

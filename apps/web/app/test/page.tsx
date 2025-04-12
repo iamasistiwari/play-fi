@@ -1,31 +1,22 @@
-"use client"
-import Ballpit from '@/components/ui/Ball';
-import React, { useState } from 'react'
+import { cn } from '@/lib/utils';
+import React from 'react'
 
-
-export default function Page() {
-  const [count, setCount] = useState(1);
+export default function page() {
   return (
-    <div className="flex flex-col items-center justify-center py-20">
-      <div className="h-96 w-96 border">
-        <Ballpit
-          key={count}
-          maxSize={0.1}
-          colors={[0xff0000, 0x00ff00, 0x0000ff]}
-          count={count}
-          gravity={0.65}
-          friction={0.99}
-          wallBounce={1.4}
-          followCursor={true}
-          size0={0.4}
-          maxVelocity={200}
-          maxY={1}
-          className="pb-0.5 opacity-15"
-        />
-      </div>
-      <div className="border p-2">
-        <button onClick={() => setCount((c) => c + 1)}>inc</button>
-      </div>
+    <div className="relative flex h-[50rem] w-full items-center justify-center bg-black">
+      <div
+        className={cn(
+          "absolute inset-0",
+          "[background-size:40px_40px]",
+          "[background-image:linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)]",
+          "dark:[background-image:linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)]",
+        )}
+      />
+      {/* Radial gradient for the container to give a faded look */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center  [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] bg-black"></div>
+      <p className="relative z-20 bg-gradient-to-b from-neutral-200 to-neutral-500 bg-clip-text py-8 text-4xl font-bold text-transparent sm:text-7xl">
+        Backgrounds
+      </p>
     </div>
   );
 }

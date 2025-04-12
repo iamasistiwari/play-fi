@@ -71,6 +71,17 @@ export type VoteSong = z.infer<typeof ValidateSongVoteSchema>;
 export type PlayNextSong = z.infer<typeof ValidatePlayNextSongSchema>;
 export type SongProgress = z.infer<typeof ValidateSongProgressSchema>;
 
+
+
+export const ValidateToWebSocketSchema = z.union([
+  ValidateCreateRoomSchema,
+  ValidateJoinRoomSchema,
+  SongSearchSchema,
+  ValidateAddSongSchema,
+  ValidateSongVoteSchema,
+  ValidatePlayNextSongSchema,
+  ValidateSongProgressSchema,
+]);
 export type ToWebSocketMessages =
   | CreateRoom
   | JoinRoom
@@ -124,6 +135,7 @@ export interface StoreSongs extends YoutubeVideoDetails {
   addedBy: string;
 }
 
+
 export interface YoutubeVideoDetails {
   id: string;
   type: string;
@@ -144,48 +156,3 @@ export interface YoutubeSearchDetails {
   items: [YoutubeVideoDetails];
 }
 
-// export interface Song {
-//   song_uri: string;
-//   name: string;
-//   duration_ms: number;
-//   artists: string;
-//   image_url: string;
-//   votes: number;
-// }
-
-// export interface SpotifyTrackType {
-//   tracks: {
-//     items: [
-//       {
-//         album: {
-//           artists: [{ name: string; type: string }];
-//           images: [
-//             {
-//               height: string;
-//               width: string;
-//               url: string;
-//             },
-//             {
-//               height: string;
-//               width: string;
-//               url: string;
-//             },
-//           ];
-//           name: string;
-//           release_date: string;
-//         };
-//         artists: [
-//           {
-//             name: string;
-//           },
-//         ];
-//         duration_ms: number;
-//         id: string;
-//         is_playable: boolean;
-//         name: string;
-//         type: string;
-//         uri: string;
-//       },
-//     ];
-//   };
-// }

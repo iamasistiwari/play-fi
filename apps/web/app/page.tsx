@@ -1,36 +1,55 @@
-"use client";
 import CustomButton from "@/components/ui/CustomButton";
-import {
-  Music2,
-  Users,
-  Vote,
-  PlayCircle,
-  Headphones,
-  Crown,
-} from "lucide-react";
+import { Music2, Users, Vote, Crown, Github, Radio } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
+    <main className=" min-h-screen">
+      <nav>
+        <div className="flex h-[72px] items-center justify-between border-b border-neutral-800 px-32 py-2">
+          <span className="inline-block bg-gradient-to-r from-blue-500 to-green-600 bg-clip-text text-2xl font-semibold text-transparent">
+            Play-Fi
+          </span>
+          <div>
+            <Link
+              href={`api/auth/signin`}
+              className="border-neutral-300 bg-blue-800 px-10 py-2 text-neutral-200 transition-colors duration-200 hover:bg-blue-900"
+            >
+              Signin
+            </Link>
+          </div>
+        </div>
+      </nav>
       {/* Hero Section */}
       <section className="relative flex h-screen items-center justify-center px-4 text-center">
         <div className="mx-auto max-w-5xl">
-          <h1 className="mb-6 bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-6xl font-bold text-transparent md:text-7xl">
-            Host Your Music Room with PlayFi
+          <h1 className="mb-10 text-6xl font-bold md:text-7xl">
+            Host Your Music Room with
+            <span className="text ml-4 bg-gradient-to-r from-blue-500 to-green-600 bg-clip-text text-transparent">
+              Play-Fi
+            </span>
           </h1>
-          <p className="mb-8 text-xl text-muted-foreground md:text-2xl">
+          <p className="mb-8 text-xl md:text-2xl">
             Create, share, and discover music together. Let your audience vote
             and shape the playlist in real-time.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <CustomButton isLoading={false} Icon={PlayCircle}>
-              Create Room
-              <PlayCircle className="ml-2 h-5 w-5" />
-            </CustomButton >
-            <CustomButton isLoading={false} Icon={PlayCircle}>
-              Join Room
-              <Headphones className="ml-2 h-5 w-5" />
-            </CustomButton >
+            <Link
+              href={`https://github.com/iamasistiwari/play-fi`}
+              target="_blank"
+              className="group relative flex items-center justify-center hover:opacity-75 transition-opacity duration-200 hover:cursor-pointer  border border-neutral-600 bg-transparent px-8 py-2"
+            >
+              <Github className="size-5" />
+              <span className="absolute right-2 top-2 h-2 w-2 bg-neutral-300 transition-all group-hover:rotate-45"></span>
+              Open Source
+            </Link>
+            <Link
+              href={`https://github.com/iamasistiwari/play-fi`}
+              target="_blank"
+              className="group relative flex items-center justify-center hover:opacity-75 transition-opacity duration-200 hover:cursor-pointer bg-green-800 px-8 py-1"
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       </section>
@@ -43,26 +62,26 @@ export default function Home() {
           </h2>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
-              icon={<Music2 className="h-8 w-8" />}
-              title="Host Music Rooms"
-              description="Create your own music room and share it with friends or the world. Full control over your musical experience."
+              icon={<Users className="h-11 w-11 text-yellow-400" />}
+              title="Fan Interaction"
+              description="Engage your audience with real-time song voting. Let the crowd decide what plays next."
             />
             <FeatureCard
-              icon={<Vote className="h-8 w-8" />}
-              title="Democratic Playlist"
-              description="Let your audience vote on songs in the queue. The most popular tracks rise to the top."
+              icon={<Radio className="h-11 w-11 text-green-600" />}
+              title="Live Streaming"
+              description="Broadcast your sessions live and connect with listeners instantly, wherever they are."
             />
             <FeatureCard
-              icon={<Users className="h-8 w-8" />}
-              title="Community Driven"
-              description="Build a community around your music taste. Connect with others who share your vibe."
+              icon={<Users className="h-8 w-8 text-blue-500" />}
+              title="High Quality Audio"
+              description="Experience studio-grade sound that captures every beat and nuance."
             />
           </div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="bg-accent/30 px-4 py-20">
+      <section className=" px-4 py-20 border-t border-neutral-700">
         <div className="mx-auto max-w-6xl">
           <h2 className="mb-16 text-center text-4xl font-bold">How It Works</h2>
           <div className="grid gap-8 md:grid-cols-3">
@@ -115,10 +134,14 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="p-6 transition-shadow hover:shadow-lg">
-      <div className="mb-4 text-primary">{icon}</div>
-      <h3 className="mb-2 text-xl font-semibold">{title}</h3>
-      <p className="text-muted-foreground">{description}</p>
+    <div className="p-6 transition-all duration-100 hover:shadow-2xl">
+      <div className="mb-4 flex w-full justify-center">{icon}</div>
+      <h3 className="mb-2 flex justify-center text-xl font-semibold">
+        {title}
+      </h3>
+      <p className="flex justify-center text-center text-neutral-400">
+        {description}
+      </p>
     </div>
   );
 }
@@ -133,7 +156,7 @@ function StepCard({
   description: string;
 }) {
   return (
-    <div className="text-center">
+    <div className="text-center ">
       <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground">
         {number}
       </div>
