@@ -3,7 +3,7 @@ import { FromWebSocketMessages, ToWebSocketMessages, ValidateToWebSocketSchema }
 import RoomManager from "./helpers/RoomManager";
 import { verifyUser } from "./helpers/validation";
 
-const PORT = 7077;
+const PORT = 3014;
 const wss = new WebSocketServer({ port: PORT });
 
 wss.on("connection", async (socket: WebSocket, request) => {

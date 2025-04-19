@@ -19,6 +19,6 @@ RUN pnpm install
 
 RUN pnpm run build-ws
 
-EXPOSE 3011
+EXPOSE 3014
 
 CMD ["pnpm", "run", "start-ws"]

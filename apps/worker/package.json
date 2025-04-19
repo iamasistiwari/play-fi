@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc -b",
-    "start": "tsc -b && node ./dist/index.js",
+    "start": "tsc -b && node ./dist/index.js --port 3012",
     "dev": "npm run start"
   },
   "keywords": [],

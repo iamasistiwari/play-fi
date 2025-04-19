@@ -28,6 +28,6 @@ RUN cd apps/web && \
   NEXTAUTH_URL=${NEXTAUTH_URL} \
   pnpm run build && cd ../..
 
-EXPOSE 3012
+EXPOSE 3013
 
 CMD ["pnpm", "run", "start-web"]
