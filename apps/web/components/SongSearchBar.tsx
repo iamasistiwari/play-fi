@@ -46,9 +46,9 @@ function SongSearchBar({ socket }: { socket: WebSocket }) {
           setSongs(parsedSongs);
         }
       }
-      if (data.type === "success" && data.message === "song added") {
-        toast.success(data.message, { duration: 800 });
-      }
+      // if (data.type === "success" && data.message === "song added") {
+      //   toast.success(data.message, { duration: 800 });
+      // }
     };
     socket.addEventListener("message", handleMessage);
 
@@ -99,14 +99,14 @@ function SongSearchBar({ socket }: { socket: WebSocket }) {
           onFocus={() => setIsInputFocus(true)}
           // onBlur={() => setIsInputFocus(false)}
           placeholder="What do you want to play?"
-          className="w-[420px] rounded-3xl pl-16 text-sm text-neutral-300 transition-colors duration-200 focus:outline-neutral-300"
+          className="w-[350px] xl:w-[420px] rounded-3xl pl-16 text-sm text-neutral-300 transition-colors duration-200 focus:outline-neutral-300"
         />
         <Search className="absolute left-3 top-2 flex h-8 w-8 text-neutral-300" />
       </div>
       {isInputFocus && (
         <div
           ref={dropDownRef}
-          className="absolute top-16 w-[420px] flex-1 flex-col space-y-2 rounded-md bg-neutral-900 px-4 py-2 backdrop-blur-sm"
+          className="absolute top-16 w-[350px] xl:w-[420px] flex-1 flex-col space-y-2 rounded-md bg-neutral-900 px-4 py-2 backdrop-blur-sm"
         >
           {songs?.items.slice(0, 5).map((value, index) => (
             <div key={index} className="flex justify-between">

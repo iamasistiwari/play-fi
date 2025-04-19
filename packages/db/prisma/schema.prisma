@@ -8,34 +8,46 @@ datasource db {
 }
 
 model User {
-  id          String @id @default(uuid())
-  email       String @unique
-  name        String
-  password    String?
-  provider    String
-  hostedSpace Room[] @relation("Hosted")
-  joinedRooms RoomUser[]
+  id           String      @id @default(uuid())
+  email        String      @unique
+  name         String
+  password     String?
+  provider     String
+  hostedSpaces Room[]      @relation("HostedRooms")
+  joinedRooms  RoomUser[]
 }
 
 model Room {
-  roomId        String @id
-  ownerId       String
-  ownerName     String
-  roomName      String
-  roomPassword  String
-  created_At    DateTime
-  maxJoinedUser Int
-  queue         Song[]
-  user          User   @relation("Hosted", fields: [ownerId], references: [id])
-  joinedUser    RoomUser[] 
+  roomId         String      @id
+  ownerId        String
+  ownerName      String
+  roomName       String
+  roomPassword   String
+  created_At     DateTime
+  maxJoinedUser  Int
+  queue          RoomSong[]
+  user           User        @relation("HostedRooms", fields: [ownerId], references: [id], onDelete: Cascade) 
+  joinedUsers    RoomUser[]
+}
+
+model RoomSong {
+  roomId    String
+  songId    String
+  addedTime DateTime
+  song      Song @relation(fields: [songId], references: [songId])
+  room      Room @relation(fields: [roomId], references: [roomId], onDelete: Cascade)
+
+  @@id([roomId, songId])
 }
 
 model RoomUser {
-  userId String
-  roomId String
+  userId   String
+  roomId   String
   joinedAt DateTime
-  user User @relation(fields: [userId], references: [id])
-  room Room @relation(fields: [roomId], references: [roomId])
+
+  user     User @relation(fields: [userId], references: [id])
+  room     Room @relation(fields: [roomId], references: [roomId], onDelete: Cascade)
+
   @@id([userId, roomId])
 }
 
@@ -46,6 +58,5 @@ model Song {
   title        String
   channelTitle String
   length       String
-  addedTime    DateTime
-  room Room[]
+  RoomSong     RoomSong[]
 }

@@ -26,9 +26,9 @@ export default function page() {
   //   );
   // }
   return (
-    <div>
+    <div className="">
       <RoomNav />
-      <div className="px-32">
+      <div className="xl:px-32">
         <RoomPlayer intialSongs={roomMetadata?.queue!} />
       </div>
     </div>

@@ -42,7 +42,7 @@ export function SocketProvider({
       const wsUrl =
         process.env.NODE_ENV === "production"
           ? `ws://localhost:7077?token=${token}`
-          : `ws://localhost:7077?token=${token}`;
+          : `ws://192.168.1.153:7077?token=${token}`;
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {

@@ -6,6 +6,11 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "build-ws": "cd apps/ws && pnpm run build && cd ../..",
+    "start-ws": "cd apps/ws && pnpm run start",
+    "start-web": "cd apps/web && pnpm run start",
+    "build-worker": "cd apps/worker && pnpm run build",
+    "start-worker": "cd apps/worker && pnpm run start",
     "check-types": "turbo run check-types"
   },
   "devDependencies": {

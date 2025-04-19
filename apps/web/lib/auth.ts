@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
           },
         });
         if (existingUser && existingUser.provider !== "google") {
-          const passwordValidation = await bcrypt.compare(hashedPassword, existingUser.password || "")
+          const passwordValidation = await bcrypt.compare(password, existingUser.password || "")
           if (passwordValidation) {
             return {
               id: existingUser.id.toString(),

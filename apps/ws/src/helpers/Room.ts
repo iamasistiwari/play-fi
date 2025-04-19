@@ -350,9 +350,6 @@ export default class Room {
 
   private broadCastTrack() {
     this.joinedPlayers.forEach((socket) => {
-      if(socket.userId === this.adminId){
-        return
-      }
       const sendMsg: FromWebSocketMessages = {
         type: "track",
         track: {

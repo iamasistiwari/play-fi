@@ -11,8 +11,16 @@ import { WebSocket } from "ws";
 import Room from "./Room";
 import dotenv from "dotenv";
 import Redis from "ioredis";
-import { prisma } from "@repo/db/index";
 dotenv.config();
+
+const getRedisURL = () => {
+  const url = process.env.REDIS_URL;
+  if (!url) {
+    throw new Error("REDIS URL NOT FOUND");
+  }
+
+  return url;
+};
 
 export default class RoomManager {
   private musicRooms: Map<string, Room>;
@@ -20,8 +28,7 @@ export default class RoomManager {
   private redisClient: Redis;
 
   private constructor() {
-    const redis_url = process.env.REDIS_URL;
-    this.redisClient = new Redis();
+    this.redisClient = new Redis(getRedisURL());
     this.musicRooms = new Map();
   }
   public static getInstance() {
@@ -36,15 +43,6 @@ export default class RoomManager {
     if (data.type === "create_room") {
       try {
         if (this.musicRooms.get(data.roomId)) {
-          const sendMsg: FromWebSocketMessages = {
-            type: "error",
-            message: "Room aldready exists",
-          };
-          return socket.send(JSON.stringify(sendMsg));
-        }
-        const createdRooms = await this.redisClient.smembers("rooms");
-        const isCreated = createdRooms.includes(data.roomId);
-        if (isCreated) {
           const sendMsg: FromWebSocketMessages = {
             type: "error",
             message: "Room aldready exists",
@@ -89,7 +87,6 @@ export default class RoomManager {
           maxJoinedUser: 1,
         };
         await this.redisClient.lpush("data", JSON.stringify(pushMessage));
-        await this.redisClient.sadd("rooms", data.roomId);
         return;
       } catch (error) {
         const sendMsg: FromWebSocketMessages = {
@@ -108,16 +105,6 @@ export default class RoomManager {
         };
         return socket.send(JSON.stringify(sendMsg));
       }
-      //check with the redis that room exits or not
-      const createdRooms = await this.redisClient.smembers("rooms");
-      const isCreated = createdRooms.includes(data.roomId);
-      if (!isCreated) {
-        const sendMsg: FromWebSocketMessages = {
-          type: "error",
-          message: "Room not exists",
-        };
-        return socket.send(JSON.stringify(sendMsg));
-      }
 
       const roomPassword = room.getRoomPassword();
       const checkPassword = roomPassword === data.roomPassword;
@@ -130,6 +117,11 @@ export default class RoomManager {
         return socket.send(JSON.stringify(sendMsg));
       }
       room.addPersons(socket);
+      const adminId = room.getAdminId()
+      const isAdmin = adminId === socket.userId
+      if(isAdmin){
+        return
+      }
       const pushMessage = {
         type: "join_room",
         roomId: data.roomId,

@@ -1,18 +1,20 @@
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@repo/db/index";
 import { getServerSession } from "next-auth";
-import { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  console.log("SERVER CAME");
+
+  if (!session) {
+    return NextResponse.json("Unauthorized request", { status: 403 });
+  }
   try {
-    // const session = await getServerSession(authOptions)
-    // if(!session){
-    //     return new Response("Unauthorized request", { status: 403 });
-    // }
     const result = await prisma.user.findUnique({
-      where: { id: "100213631629308552409" },
+      where: { id: session.user.id },
       select: {
-        hostedSpace: {
+        hostedSpaces: {
           orderBy: {
             created_At: "desc",
           },
@@ -27,7 +29,7 @@ export async function GET() {
         },
       },
     });
-    const hosted = (result?.hostedSpace ?? []).map((room) => ({
+    const hosted = (result?.hostedSpaces ?? []).map((room) => ({
       type: "hosted",
       time: new Date(room.created_At),
       data: room,
@@ -42,8 +44,8 @@ export async function GET() {
     const merged = [...hosted, ...joined].sort(
       (a, b) => b.time.getTime() - a.time.getTime(),
     );
-    return new Response(JSON.stringify(merged), { status: 200 });
+    return NextResponse.json(merged, { status: 200 });
   } catch (error) {
-    return new Response("ERROR", { status: 404 });
+    return NextResponse.json([], { status: 400 });
   }
 }

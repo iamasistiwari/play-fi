@@ -10,11 +10,12 @@ export default async function page() {
   const session = await getServerSession(authOptions);
   return (
     <div>
-      <nav className="flex h-16 items-center justify-between border-b border-neutral-800 px-32">
+      <nav className="flex h-16 items-center justify-between border-b border-neutral-800 px-4 xl:px-32">
         <span className="inline-block bg-gradient-to-r from-blue-500 to-green-600 bg-clip-text text-2xl font-semibold text-transparent">
           Play-Fi
         </span>
         <div className="flex items-center justify-center space-x-2">
+          <span className="">{session?.user.name}</span>
           <span className="relative flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 p-1.5 text-neutral-400">
             {session?.user.image ? (
               <Image
@@ -27,11 +28,11 @@ export default async function page() {
               <User />
             )}
           </span>
-          <span className="">{session?.user.name}</span>
         </div>
       </nav>
+
       {/* input and recent */}
-      <div className="flex justify-between px-32 mt-10">
+      <div className="flex xl:flex-row flex-col space-y-2 xl:justify-between px-4 xl:px-32 mt-10">
         <div>
           <RoomInput />
         </div>

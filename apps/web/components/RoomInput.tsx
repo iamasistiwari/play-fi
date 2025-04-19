@@ -39,15 +39,16 @@ export default function RoomInput() {
   useEffect(() => {
     if (!socket || loading) return;
 
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       const data = JSON.parse(event.data) as unknown as FromWebSocketMessages;
 
       if (data.type === "joined" && data.metadata) {
         toast.success("Redirecting...", { id: toastId.current! });
         SetRoomMetadata(data.metadata);
-        const pathTitle = data.metadata.room_title.replaceAll(" ", "");
+        await new Promise((resolve) => setTimeout(resolve, 1000))
         setCreating(false);
-        router.push(`/room/${pathTitle}--${data.metadata.room_id}`);
+        const path = data.metadata.room_id.toLowerCase();
+        router.push(`/room/${path}`);
       }
       if (data.type === "error" && data.message) {
         toast.error(data.message, { id: toastId.current! });
@@ -56,6 +57,9 @@ export default function RoomInput() {
     };
 
     socket.addEventListener("message", handleMessage);
+    return () => {
+      socket.removeEventListener("message", handleMessage);
+    };
   }, [socket]);
 
   const createJoinRoom = async () => {
@@ -73,7 +77,7 @@ export default function RoomInput() {
         return;
       }
 
-      if (socket && !loading) {
+      if (socket) {
         const roomMsg = {
           type: "create_room",
           roomId: generatedRoomCode,

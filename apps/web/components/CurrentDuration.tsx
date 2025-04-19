@@ -24,10 +24,6 @@ export default function CurrentDuration({
   const [durationPlayed, setDurationPlayed] = useState<number | undefined>(songMetaData?.currentSongProgress);
 
   useEffect(() => {
-    console.log("INSIDE DURATIOn",songMetaData);
-  })
-
-  useEffect(() => {
     
     if (playerRef.current && role === "admin") {
       setSongDuration(playerRef.current.getDuration());
@@ -41,7 +37,6 @@ export default function CurrentDuration({
     ) {
       setSongDuration(songMetaData.currentSongDuration);
       setDurationPlayed(songMetaData.currentSongProgressINsecond);
-      console.log("HERE INSIDE ROLE USER", songMetaData)
     }
   }, [playerRef.current?.getCurrentTime(), songMetaData]);
 

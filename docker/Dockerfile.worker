@@ -1,0 +1,26 @@
+FROM node:23-alpine
+
+ARG REDIS_URL
+ARG DATABASE_URL
+
+RUN apk add --no-cache python3 make g++
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+
+COPY package.json pnpm-lock.yaml ./
+COPY turbo.json ./
+COPY pnpm-workspace.yaml ./
+
+COPY apps/worker/ apps/worker/
+COPY packages/ packages/
+
+RUN pnpm install
+
+RUN pnpm run build-worker
+
+EXPOSE 3012
+
+CMD ["pnpm", "run", "start-worker"]

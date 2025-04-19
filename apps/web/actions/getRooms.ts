@@ -9,7 +9,7 @@ export async function getRooms() {
     const result = await prisma.user.findUnique({
       where: { id: session?.user.id },
       select: {
-        hostedSpace: {
+        hostedSpaces: {
           orderBy: {
             created_At: "desc",
           },
@@ -25,7 +25,7 @@ export async function getRooms() {
       },
     });
 
-    const hosted = (result?.hostedSpace ?? []).map((room) => ({
+    const hosted = (result?.hostedSpaces ?? []).map((room) => ({
       type: "hosted",
       time: new Date(room.created_At),
       data: room,

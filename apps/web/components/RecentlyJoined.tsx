@@ -1,9 +1,11 @@
 "use client";
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import CustomButton from "./ui/CustomButton";
 import clsx from "clsx";
-import { getRooms } from "@/actions/getRooms";
+import { useSocket } from "@/hooks/useSocket";
+import { useRouter } from "next/navigation";
+import { FromWebSocketMessages } from "@repo/common/type";
+import { cn } from "@/lib/utils";
 
 interface Rooms {
   type: string;
@@ -22,15 +24,65 @@ interface Rooms {
 export default function RecentlyJoined() {
   const [rooms, setRoom] = useState<Rooms[]>([]);
   const [loading, setLoading] = useState(true);
+  const { socket, SetRoomMetadata } = useSocket();
+  const [creating, setCreating] = useState<boolean[]>(new Array(rooms.length).fill(false));
+  const router = useRouter();
+
+  const handleJoin = (index: number) => {
+    if (socket && rooms[index]) {
+      setCreating((prev) => {
+        const newCreating = [...prev]
+        newCreating[index] = true
+        return newCreating
+      });
+      const roomMsg = {
+        type: "join_room",
+        roomId: rooms[index].data.roomId,
+        roomPassword: rooms[index].data.roomPassword,
+      };
+      return socket.send(JSON.stringify(roomMsg));
+    }
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleMessage = async (event: MessageEvent) => {
+      const data = JSON.parse(event.data) as unknown as FromWebSocketMessages;
+      if (data.type === "joined" && data.metadata) {
+        SetRoomMetadata(data.metadata);
+        const path = data.metadata.room_id.toLowerCase()
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setCreating((prev) => prev.map(() => false));
+        router.push(`/room/${path}`)
+      }
+      if (data.type === "error" && data.message) {
+        setCreating((prev) => prev.map(() => false));
+
+        return;
+      }
+    };
+    socket.addEventListener("message", handleMessage);
+    return () => {
+      socket.removeEventListener("message", handleMessage);
+    };
+  }, [socket]);
 
   useEffect(() => {
     const gets = async () => {
       try {
-        const res = await getRooms();
-        if (res) {
+        const res = await fetch("/api/rooms", {
+          method: "GET",
+        });
+        const parsedData = await res.json()
+        if (!res.ok) {
           setLoading(false);
-          setRoom(res);
+          setRoom([])
+          setCreating(new Array(parsedData.length).fill(false)); 
+          return
         }
+        setLoading(false);
+        setRoom(parsedData);
+        setCreating(new Array(parsedData.length).fill(false)); 
       } catch (error) {
         console.log("ERROR WHILE FETCHING");
       }
@@ -40,16 +92,16 @@ export default function RecentlyJoined() {
 
   if (loading) {
     return (
-      <div className="border-custom flex max-h-[90vh] min-h-[60vh] w-[40vw] flex-col scroll-smooth rounded-xl border pt-2">
-        <span className="flex justify-center text-lg font-semibold">
+      <div className="border-custom flex max-h-[90vh] min-h-[60vh] xl:w-[40vw] flex-col scroll-smooth rounded-xl border pt-2">
+        <span className="flex justify-center pt-2 text-lg font-semibold">
           Recent joined rooms
         </span>
 
-        <div className="scrollbar-w-2 scrollbar-track-blue-lighter scrollbar-thumb-blue scrollbar-thumb-rounded flex max-h-[70vh] flex-col justify-between space-y-3 overflow-y-auto px-3 py-4 text-start">
+        <div className="scrollbar-w-2 scrollbar-track-blue-lighter scrollbar-thumb-blue scrollbar-thumb-rounded flex max-h-[70vh] flex-col justify-between space-y-3 overflow-y-auto px-3 py-4 pt-6 text-start">
           {new Array(5).fill(1).map((room, index) => (
             <div className="flex flex-col" key={index}>
               <span></span>
-              <span className="h-2 w-2 bg-neutral-700"></span>
+              <span className="h-14 w-full animate-pulse rounded-2xl bg-neutral-800 opacity-85"></span>
             </div>
           ))}
         </div>
@@ -58,15 +110,18 @@ export default function RecentlyJoined() {
   }
 
   return (
-    <div className="border-custom flex max-h-[90vh] min-h-[60vh] w-[40vw] flex-col scroll-smooth rounded-xl border pt-2">
-      <span className="flex justify-center text-lg font-semibold">
+    <div className="border-custom flex max-h-[90vh] min-h-[60vh] xl:w-[40vw] mt-4 xl:mt-0 flex-col scroll-smooth rounded-xl border pt-2">
+      <span className="flex justify-center pt-2 text-lg font-semibold">
         Recent joined rooms
       </span>
 
-      <div className="scrollbar-w-2 scrollbar-track-blue-lighter scrollbar-thumb-blue scrollbar-thumb-rounded flex max-h-[70vh] flex-col justify-between space-y-3 overflow-y-auto px-3 py-4 text-start">
-        {rooms?.map((room) => (
+      <div className="scrollbar-w-2 scrollbar-track-blue-lighter scrollbar-thumb-blue scrollbar-thumb-rounded flex max-h-[70vh] flex-col justify-between space-y-3 overflow-y-auto p-4 text-start">
+        {rooms?.map((room, index) => (
           <div
-            className="flex flex-row items-center justify-between border-b border-neutral-500 py-2"
+            className={cn(
+              "flex flex-row items-center justify-between border-b border-neutral-700 py-2 pb-4 pt-6",
+              index === rooms.length-1 && "border-b-0"
+            )}
             key={room.data.roomId}
           >
             <div className="flex flex-col">
@@ -81,10 +136,14 @@ export default function RecentlyJoined() {
             <div>
               <CustomButton
                 className={clsx("", room.type === "joined" && "bg-blue-700")}
-                isLoading={false}
+                isLoading={creating[index] || false}
                 Icon={null}
+                onClick={() => {
+                  handleJoin(index);
+                }}
+                loaderStyle="mr-2"
               >
-                {room.type === "hosted" ? "Re create" : "Join"}
+                {room.type === "hosted" ? "Create again" : "Join again"}
               </CustomButton>
             </div>
           </div>

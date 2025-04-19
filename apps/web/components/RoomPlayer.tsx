@@ -362,13 +362,13 @@ export default function RoomPlayer({
   ];
 
   return (
-    <div className="flex justify-between py-10">
-      <div className="border-custom flex max-h-[78vh] min-h-[20vh] min-w-[40vw] max-w-[45vw] flex-col items-center gap-y-5 rounded-2xl border px-4 py-4">
+    <div className="flex flex-col items-center justify-center space-y-10 py-10 xl:flex-row xl:items-start xl:justify-between xl:space-y-0">
+      <div className="border-custom hidden min-w-[40vw] max-w-[45vw] flex-col items-center gap-y-5 rounded-2xl border px-4 py-4 xl:flex xl:max-h-[78vh] xl:min-h-[20vh]">
         <div className="">Currently playing :</div>
         {songQueue.length !== 0 ? (
           <div className="scrollbar-thumb-rounded scrollbar-thumb-blue scrollbar-track-blue-lighter scrollbar-w-2 grid h-full w-full grid-flow-row gap-y-5 overflow-y-auto scroll-smooth">
             {songQueue.map((song, index) => (
-              <div key={song.id} className="flex h-20 justify-between">
+              <div key={index} className="flex h-20 justify-between">
                 <div className="flex space-x-1">
                   <Image
                     src={
@@ -417,8 +417,9 @@ export default function RoomPlayer({
           </div>
         )}
       </div>
-      <div className="w-[30vw] space-y-5">
-        <div className="flex h-[35vh] w-full justify-end">
+
+      <div className="hidden xl:block relative top-32 space-y-5 xl:top-0 xl:w-[30vw]">
+        <div className="flex h-[35vh] w-full justify-center xl:justify-end">
           <div className="hidden">
             <ReactPlayerV
               ref={playerRef}
@@ -440,7 +441,7 @@ export default function RoomPlayer({
 
           <div className="relative flex justify-end">
             {/* Circle Progress Bar */}
-            <div className="relative h-80 w-80">
+            <div className="relative -top-32 h-40 w-40 xl:top-0 xl:h-80 xl:w-80">
               <Circle
                 percent={songProgress}
                 strokeWidth={2}
@@ -456,7 +457,7 @@ export default function RoomPlayer({
               />
 
               {/* Image inside Circle */}
-              <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 transform overflow-hidden rounded-full">
+              <div className="absolute left-1/2 top-1/2 h-[250px] w-[250px] -translate-x-1/2 -translate-y-1/2 transform overflow-hidden rounded-full xl:h-[300px] xl:w-[300px]">
                 <Image
                   src={`${currentlyPlayingSong?.thumbnail.thumbnails[1]?.url || currentlyPlayingSong?.thumbnail.thumbnails[0]?.url || "/music.png"}`}
                   height={280}
@@ -466,11 +467,11 @@ export default function RoomPlayer({
                 />
               </div>
 
-              <div className="my-4 flex select-none flex-col px-4 pl-6 text-sm">
+              <div className="my-4 flex w-full select-none flex-col px-4 pl-6 text-sm">
                 <span className="text-neutral-200">
                   {currentlyPlayingSong?.title}
                 </span>
-                <div className="mt-4 flex items-center justify-center space-x-4 rounded-xl border border-neutral-500">
+                <div className="relative right-10 top-8 mt-4 flex w-[50vw] items-center justify-center space-x-4 rounded-xl border border-neutral-500 xl:right-0 xl:top-0 xl:w-full">
                   <span className="font-semibold">
                     <CurrentDuration
                       playerRef={playerRef}
@@ -557,6 +558,207 @@ export default function RoomPlayer({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* mobile */}
+
+      <div className="block xl:hidden relative top-60">
+        <div className="flex h-[35vh] w-full justify-center xl:justify-end">
+          <div className="hidden">
+            <ReactPlayerV
+              ref={playerRef}
+              url={`https://www.youtube.com/watch?v=${currentlyPlayingSong?.id}`}
+              playing={roomMetadata?.role === "user" ? false : playingSong}
+              controls={true}
+              width="100%"
+              height="100%"
+              onEnded={handlePlayNext}
+              volume={currentVolume}
+              onProgress={(details) => {
+                if (roomMetadata?.role === "admin") {
+                  setSongProgress(details.played * 100);
+                }
+              }}
+              onReady={() => setIsPlayerReady(true)}
+            />
+          </div>
+
+          <div className="relative flex justify-end">
+            {/* Circle Progress Bar */}
+            <div className="relative -top-32 h-40 w-40 xl:top-0 xl:h-80 xl:w-80">
+              <Circle
+                percent={songProgress}
+                strokeWidth={2}
+                strokeColor={{
+                  "25%": "#0369a1",
+                  "50%": "#3730a3",
+                  "75%": "#701a75",
+                  "100%": "#831843",
+                }}
+                strokeLinecap="round"
+                trailColor="#a8a29e"
+                className="h-full w-full"
+              />
+
+              {/* Image inside Circle */}
+              <div className="absolute left-1/2 top-1/2 h-[250px] w-[250px] -translate-x-1/2 -translate-y-1/2 transform overflow-hidden rounded-full xl:h-[300px] xl:w-[300px]">
+                <Image
+                  src={`${currentlyPlayingSong?.thumbnail.thumbnails[1]?.url || currentlyPlayingSong?.thumbnail.thumbnails[0]?.url || "/music.png"}`}
+                  height={280}
+                  width={280}
+                  alt="img"
+                  className={`h-full w-full select-none rounded-full border-purple-300 object-cover ${playingSong ? "animate-spin [animation-duration:30s]" : ""}`}
+                />
+              </div>
+
+              <div className="my-4 flex w-full select-none flex-col px-4 pl-6 text-sm">
+                <span className="text-neutral-200 relative top-10">
+                  {currentlyPlayingSong?.title}
+                </span>
+                <div className="relative right-10 top-8 mt-4 flex w-[50vw] items-center justify-center space-x-4 rounded-xl border border-neutral-500 xl:right-0 xl:top-0 xl:w-full">
+                  <span className="font-semibold">
+                    <CurrentDuration
+                      playerRef={playerRef}
+                      role={roomMetadata?.role}
+                      songMetaData={songProgresMeta}
+                    />
+                  </span>
+                  <div className="flex items-center justify-center">
+                    <div className="select-none">{currentVolume * 100}</div>
+                    {renderVolumeIcon()}
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`${roomMetadata?.role === "admin" ? "flex items-center justify-center space-x-5" : "hidden"}`}
+              >
+                <div className="flex items-center w-[72vw] xl:w-full top-8 left-0 relative  justify-center space-x-2">
+                  <CustomButton
+                    isLoading={false}
+                    Icon={IoPlaySkipBack}
+                    className="h-12 w-12 rounded-full border border-neutral-700 bg-transparent px-0 active:scale-100"
+                    onClick={() => {
+                      handleSeek("seek0");
+                    }}
+                    iconStyle="w-full h-full mr-0"
+                    loaderStyle="mr-0"
+                  />
+
+                  <CustomButton
+                    isLoading={false}
+                    Icon={ChevronLeft}
+                    className="h-10 w-10 rounded-full border border-neutral-700 bg-transparent p-2 px-0 hover:bg-neutral-800 active:scale-100"
+                    onClick={() => {
+                      handleSeek("desc");
+                    }}
+                    iconStyle="w-full h-full"
+                    loaderStyle="mr-0"
+                  />
+
+                  {playingSong === true ? (
+                    <CustomButton
+                      isLoading={false}
+                      Icon={IoPause}
+                      className="h-12 w-12 rounded-full bg-green-700 px-0"
+                      onClick={() => {
+                        setPlayingSong(false);
+                      }}
+                      iconStyle="w-full h-full mr-0"
+                      loaderStyle="mr-0"
+                    />
+                  ) : (
+                    <CustomButton
+                      isLoading={!isPlayerReady}
+                      Icon={IoPlay}
+                      className="h-12 w-12 rounded-full bg-red-800 px-0"
+                      onClick={() => {
+                        setPlayingSong(true);
+                      }}
+                      iconStyle="mr-0 w-full h-full "
+                      loaderStyle="mr-0"
+                    />
+                  )}
+                  <CustomButton
+                    isLoading={false}
+                    Icon={ChevronRight}
+                    className="h-10 w-10 rounded-full border border-neutral-700 bg-transparent p-2 px-0 hover:bg-neutral-800 active:scale-100"
+                    onClick={() => {
+                      handleSeek("inc");
+                    }}
+                    iconStyle="w-full h-full"
+                    loaderStyle="mr-0"
+                  />
+                  <CustomButton
+                    isLoading={isChangingSong}
+                    Icon={IoPlaySkipForward}
+                    className="h-12 w-12 rounded-full border border-neutral-700 bg-transparent px-0"
+                    onClick={handlePlayNext}
+                    iconStyle="mr-0 w-full h-full"
+                    loaderStyle=" mr-0"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-custom relative top-60 flex w-[100vw] flex-col items-center gap-y-5 rounded-2xl border p-4 xl:hidden xl:max-h-[78vh] xl:min-h-[20vh]">
+        <div className="">Currently playing :</div>
+        {songQueue.length !== 0 ? (
+          <div className="scrollbar-thumb-rounded scrollbar-thumb-blue scrollbar-track-blue-lighter scrollbar-w-2 grid h-full w-full grid-flow-row gap-y-5 overflow-y-auto scroll-smooth">
+            {songQueue.map((song, index) => (
+              <div key={index} className="flex h-20 justify-between">
+                <div className="flex space-x-1">
+                  <Image
+                    src={
+                      song.thumbnail.thumbnails[1]?.url ||
+                      song.thumbnail.thumbnails[0]?.url ||
+                      "/music.png"
+                    }
+                    alt="image"
+                    height={10}
+                    width={100}
+                    className="rounded-lg"
+                  />
+                  {/* video title */}
+                  <div className="flex flex-col">
+                    <div className="text-xs">
+                      {song.title.split(" ").slice(0, 5).join(" ")}
+                    </div>
+                    <div className="flex items-center space-x-2 text-sm text-neutral-400">
+                      <span className="text-xs">{song.channelTitle}</span>
+                      <span className="text-xs">{song.length.simpleText}</span>
+                    </div>
+                    <div className="text-xs text-neutral-400">
+                      Added by : {song.addedBy}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className="flex rounded-full hover:cursor-pointer"
+                  onClick={() => {
+                    handleVote(index);
+                  }}
+                >
+                  <div className="flex h-6 w-12 flex-row items-center justify-center rounded-md border border-neutral-700 p-1">
+                    <span className="pt-1 text-sm">{song.votes}</span>
+                    <ThumbsUp
+                      className={`ml-1 pb-0.5 transition-colors duration-150 ${song.voted ? `fill-neutral-300 text-neutral-900` : `text-neutral-100`}`}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center space-x-2 text-xl font-semibold">
+            <Music2 />
+            <span>Currently empty</span>
+          </div>
+        )}
       </div>
     </div>
   );

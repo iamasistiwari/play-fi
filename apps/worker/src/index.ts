@@ -17,29 +17,23 @@ const getRedisURL = () => {
   return url;
 };
 
-const redis = new Redis();
+const redis = new Redis(getRedisURL());
 
 async function main() {
   while (true) {
-    let data:any = null
+    let data: any = null;
     try {
       const res = await redis.brpop("data", 0);
       if (!res) {
         continue;
       }
       data = await JSON.parse(res[1]);
-      if(data.type === "song_added"){
+      if (data.type === "song_added") {
         await prisma.song.upsert({
           where: {
             songId: data.songId,
           },
-          update: {
-            room: {
-              connect: {
-                roomId: data.roomId
-              }
-            }
-          },
+          update: {},
           create: {
             songId: data.songId,
             bigImg: data.bigImg,
@@ -47,18 +41,27 @@ async function main() {
             title: data.title,
             channelTitle: data.channelTitle,
             length: data.length,
-            addedTime: data.addedTime,
-            room: {
-              connect: {
-                roomId: data.roomId
-              },
-            },
           },
         });
-        console.log("OK ADDED")
+        await prisma.roomSong.upsert({
+          where: {
+            roomId_songId: {
+              roomId: data.roomId,
+              songId: data.songId,
+            },
+          },
+          update: {
+            addedTime: data.addedTime,
+          },
+          create: {
+            roomId: data.roomId,
+            songId: data.songId,
+            addedTime: data.addedTime,
+          },
+        });
+        console.log("OK ADDED");
         continue;
       }
-
       if (data.type === "join_room") {
         await prisma.roomUser.upsert({
           where: {
@@ -96,7 +99,7 @@ async function main() {
       }
     } catch (error) {
       console.log("Err is", error);
-      
+
       const isDbDown =
         (error instanceof PrismaClientKnownRequestError &&
           ["P1001", "P1002", "P1003"].includes(error.code)) ||
@@ -109,7 +112,6 @@ async function main() {
       } else {
         console.error("Unhandled error:", error);
       }
-
     }
   }
 }

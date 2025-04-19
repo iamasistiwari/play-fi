@@ -15,7 +15,7 @@ function BallPit({ ballsCount }: { ballsCount: number }) {
       size0={0.4}
       maxVelocity={200}
       maxY={1}
-      className="pb-0.5 opacity-15"
+      className="pb-0.5 opacity-15 z-10"
     />
   );
 }

@@ -30,29 +30,34 @@ export default function RoomNav() {
   }, [socket]);
 
   return (
-    <div>
-      <div className="flex h-[72px] items-center justify-between border-b border-neutral-800 px-32 py-2">
+    <div className="">
+      <div className="flex h-[72px] items-center justify-between border-b border-neutral-800 px-4 py-2 xl:px-32">
         <span className="inline-block bg-gradient-to-r from-blue-500 to-green-600 bg-clip-text text-2xl font-semibold text-transparent">
           Play-Fi
         </span>
-        <div className="rounded-3xl bg-neutral-900">
-          <SongSearchBar socket={socket!}/>
+        <div className="hidden rounded-3xl bg-neutral-900 xl:block">
+          <SongSearchBar socket={socket!} />
         </div>
-        <div>
+        <div className="block z-20 rounded-3xl bg-neutral-900 xl:hidden relative top-20 max-w-[10vw] items-start justify-start right-36">
+          <SongSearchBar socket={socket!} />
+        </div>
+        <div className="z-0">
           <div className="flex space-x-2 text-lg">
-            <span>{currentMetadata?.room_title || "Ajaoo Mache"}</span>
+            <span className="max-w-[30vw] whitespace-nowrap text-sm xl:max-w-[60vw] xl:text-lg">
+              {currentMetadata?.room_title || "Ajaoo Mache"}
+            </span>
           </div>
           <div className="flex space-x-2 text-sm text-neutral-400">
             <span>{currentMetadata?.owner_name || "Ashish"}</span>
-            <div className="flex justify-center items-center space-x-0.5">
-              <Eye className="size-4"/>
+            <div className="flex items-center justify-center space-x-0.5">
+              <Eye className="size-4" />
               <span>{member}</span>
             </div>
           </div>
         </div>
       </div>
       <div className="absolute top-0 z-[-1] max-h-[72px] w-screen overflow-hidden">
-        <BallPit ballsCount={member}/>
+        <BallPit ballsCount={member} />
       </div>
     </div>
   );
