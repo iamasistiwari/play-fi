@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className=" min-h-screen">
+    <main className="min-h-screen">
       <nav>
         <div className="flex h-[72px] items-center justify-between border-b border-neutral-800 px-32 py-2">
           <span className="inline-block bg-gradient-to-r from-blue-500 to-green-600 bg-clip-text text-2xl font-semibold text-transparent">
@@ -21,7 +21,7 @@ export default function Home() {
         </div>
       </nav>
       {/* Hero Section */}
-      <section className="relative flex h-screen items-center justify-center px-4 text-center">
+      <section className="relative bottom-10 flex h-screen items-center justify-center px-4 text-center">
         <div className="mx-auto max-w-5xl">
           <h1 className="mb-10 text-6xl font-bold md:text-7xl">
             Host Your Music Room with
@@ -37,16 +37,17 @@ export default function Home() {
             <Link
               href={`https://github.com/iamasistiwari/play-fi`}
               target="_blank"
-              className="group relative flex items-center justify-center hover:opacity-75 transition-opacity duration-200 hover:cursor-pointer  border border-neutral-600 bg-transparent px-8 py-2"
+              className="group relative flex items-center justify-center border border-neutral-600 bg-transparent px-8 py-2 transition-opacity duration-200 hover:cursor-pointer hover:opacity-75"
             >
-              <Github className="size-5" />
+              <Github className="mr-1 size-5" />
               <span className="absolute right-2 top-2 h-2 w-2 bg-neutral-300 transition-all group-hover:rotate-45"></span>
               Open Source
             </Link>
             <Link
-              href={`https://github.com/iamasistiwari/play-fi`}
+
+              href={`/signup`}
               target="_blank"
-              className="group relative flex items-center justify-center hover:opacity-75 transition-opacity duration-200 hover:cursor-pointer bg-green-800 px-8 py-1"
+              className="group relative flex items-center justify-center bg-green-800 px-8 py-1 transition-opacity duration-200 hover:cursor-pointer hover:opacity-75"
             >
               Get Started
             </Link>
@@ -81,7 +82,7 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className=" px-4 py-20 border-t border-neutral-700">
+      <section className="border-t border-neutral-800 px-4 py-20">
         <div className="mx-auto max-w-6xl">
           <h2 className="mb-16 text-center text-4xl font-bold">How It Works</h2>
           <div className="grid gap-8 md:grid-cols-3">
@@ -114,10 +115,17 @@ export default function Home() {
             Join thousands of music lovers who are already hosting their own
             rooms.
           </p>
-          <CustomButton isLoading={false} Icon={null}>
-            Get Started Now
-            <Crown className="ml-2 h-5 w-5" />
-          </CustomButton>
+          <div className="flex justify-center">
+            <Link
+              href={`/signup`}
+              target="_blank"
+              className="group max-w-60 relative flex items-center justify-center bg-green-800 px-10 py-3 hover:cursor-pointer transition-opacity duration-200 hover:cursor-pointer hover:opacity-75"
+            >
+              <Crown className="h-5 w-5 mr-2" />
+              <span>Get Started</span>
+            </Link>
+
+          </div>
         </div>
       </section>
     </main>

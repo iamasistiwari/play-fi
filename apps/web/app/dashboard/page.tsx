@@ -5,6 +5,7 @@ import { User } from "lucide-react";
 import RoomInput from "../../components/RoomInput";
 import Image from "next/image";
 import RecentlyJoined from "@/components/RecentlyJoined";
+import Link from "next/link";
 
 export default async function page() {
   const session = await getServerSession(authOptions);
@@ -15,7 +16,10 @@ export default async function page() {
           Play-Fi
         </span>
         <div className="flex items-center justify-center space-x-2">
-          <span className="">{session?.user.name}</span>
+          <div className="flex flex-col">
+            <span className="">{session?.user.name}</span>
+            <Link className="text-xs text-neutral-400" href={"/api/auth/signout"}>Signout</Link>
+          </div>
           <span className="relative flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 p-1.5 text-neutral-400">
             {session?.user.image ? (
               <Image
@@ -32,7 +36,7 @@ export default async function page() {
       </nav>
 
       {/* input and recent */}
-      <div className="flex xl:flex-row flex-col space-y-2 xl:justify-between px-4 xl:px-32 mt-10">
+      <div className="mt-10 flex flex-col space-y-2 px-4 xl:flex-row xl:justify-between xl:px-32">
         <div>
           <RoomInput />
         </div>

@@ -5,8 +5,6 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  console.log("SERVER CAME");
-
   if (!session) {
     return NextResponse.json("Unauthorized request", { status: 403 });
   }
