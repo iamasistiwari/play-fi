@@ -41,7 +41,7 @@ export function SocketProvider({
       }
       const wsUrl =
         process.env.NODE_ENV === "production"
-          ? `ws://playfi-ws:3014?token=${token}`
+          ? `wss://playfi-ws.ashishtiwari.net/?token=${token}`
           : `ws://localhost:3014?token=${token}`;
       const ws = new WebSocket(wsUrl);
 
