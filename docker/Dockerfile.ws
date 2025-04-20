@@ -1,6 +1,7 @@
 FROM node:23-alpine
 
 ARG REDIS_URL
+ARG NEXTAUTH_SECRET
 RUN apk add --no-cache python3 make g++
 
 WORKDIR /app

@@ -53,6 +53,7 @@ jobs:
         tags: asistiwari96/playfi-ws:latest
         build-args: |
           REDIS_URL=${{ secrets.REDIS_URL }}
+          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
 
     - name: Deploy to EC2
       uses: appleboy/ssh-action@master
@@ -77,6 +78,7 @@ jobs:
           echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S docker run -d --name playfi-ws \
             --network playfi \
             -e REDIS_URL=${{ secrets.REDIS_URL }} \
+            -e NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             -p 3014:3014 --restart always \
             asistiwari96/playfi-ws:latest
 
