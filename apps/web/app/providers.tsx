@@ -6,7 +6,7 @@ import { SessionProvider } from "next-auth/react";
 
 export default function Provider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const shouldUseSocket = pathname !== "/";
+  const shouldUseSocket = !["/", "/signin", "/signup"].includes(pathname);
   return shouldUseSocket ? (
     <SocketProvider>
       <SessionProvider>
