@@ -125,17 +125,17 @@ export default function RecentlyJoined() {
             key={room.data.roomId}
           >
             <div className="flex flex-col">
-              <span>{room.data.roomName}</span>
+              <span className="text-[15px] lg:text-base">{room.data.roomName}</span>
               <div className="flex flex-row space-x-4 pt-0.5 text-xs text-neutral-300">
-                <span>
-                  owner: {room.type === "hosted" ? "you" : room.data.ownerName}
+                <span className="text-xs">
+                  {room.type === "hosted" ? "you" : room.data.ownerName}
                 </span>
                 <span className="">id: {room.data.roomId}</span>
               </div>
             </div>
             <div>
               <CustomButton
-                className={clsx("", room.type === "joined" && "bg-blue-700")}
+                className={clsx("px-2 lg:px-8", room.type === "joined" && "bg-blue-700")}
                 isLoading={creating[index] || false}
                 Icon={null}
                 onClick={() => {

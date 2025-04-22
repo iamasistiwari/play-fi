@@ -24,6 +24,7 @@ import {
 import CustomButton from "./ui/CustomButton";
 import ReactPlayer from "react-player";
 import CurrentDuration, { SONG_METADATA } from "./CurrentDuration";
+import toast from "react-hot-toast";
 const ReactPlayerV = dynamic(() => import("react-player/lazy"), { ssr: false });
 
 export default function RoomPlayer({
@@ -48,10 +49,9 @@ export default function RoomPlayer({
     YoutubeVideoDetails | undefined
   >(roomMetadata?.track.currentTrack);
 
-
   useEffect(() => {
-    console.log("RE RENDER",songProgresMeta)
-  })
+    console.log("RE RENDER", songProgresMeta);
+  });
 
   useEffect(() => {
     if (!socket) return;
@@ -362,66 +362,132 @@ export default function RoomPlayer({
   ];
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-10 py-10 xl:flex-row xl:items-start xl:justify-between xl:space-y-0">
-      <div className="border-custom hidden min-w-[40vw] max-w-[45vw] flex-col items-center gap-y-5 rounded-2xl border px-4 py-4 xl:flex xl:max-h-[78vh] xl:min-h-[20vh]">
-        <div className="">Currently playing :</div>
-        {songQueue.length !== 0 ? (
-          <div className="scrollbar-thumb-rounded scrollbar-thumb-blue scrollbar-track-blue-lighter scrollbar-w-2 grid h-full w-full grid-flow-row gap-y-5 overflow-y-auto scroll-smooth">
-            {songQueue.map((song, index) => (
-              <div key={index} className="flex h-20 justify-between">
-                <div className="flex space-x-1">
-                  <Image
-                    src={
-                      song.thumbnail.thumbnails[1]?.url ||
-                      song.thumbnail.thumbnails[0]?.url ||
-                      "/music.png"
-                    }
-                    alt="image"
-                    height={100}
-                    width={120}
-                    className="rounded-lg"
-                  />
-                  {/* video title */}
-                  <div className="flex flex-col">
-                    <div>{song.title.split(" ").slice(0, 5).join(" ")}</div>
-                    <div className="flex items-center space-x-2 text-sm text-neutral-400">
-                      <span>{song.channelTitle}</span>
-                      <span className="text-xs">{song.length.simpleText}</span>
+    <div className="w-full py-6">
+      {/* Mobile-first layout (stacked) that changes to side-by-side on lg breakpoints */}
+      <div className="flex flex-col w-full  lg:flex-row lg:items-start  lg:justify-between lg:space-x-6">
+        {/* Left side - Current Track (stacked on mobile, left-aligned on lg+) */}
+        {/* Right side - Queue (mobile & desktop versions) */}
+        <div className="w-full lg:w-1/2 xl:w-3/5">
+          {/* Mobile Song Queue - Only shown on mobile */}
+          <div className="mb-6 w-full lg:hidden">
+            <div className="px-4 pb-2 text-center font-medium">
+              Currently playing:
+            </div>
+            {songQueue.length !== 0 ? (
+              <div className="max-h-48 overflow-y-auto px-2">
+                {songQueue.map((song, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between border-b border-neutral-800 py-2"
+                  >
+                    <div className="flex space-x-2">
+                      <Image
+                        src={
+                          song.thumbnail.thumbnails[1]?.url ||
+                          song.thumbnail.thumbnails[0]?.url ||
+                          "/music.png"
+                        }
+                        alt="image"
+                        height={50}
+                        width={50}
+                        className="rounded-md"
+                      />
+                      <div className="flex max-w-[150px] flex-col">
+                        <div className="truncate text-sm">{song.title}</div>
+                        <div className="text-xs text-neutral-400">
+                          {song.channelTitle}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-neutral-400">
-                      Added by : {song.addedBy}
-                    </div>
-                  </div>
-                </div>
 
-                <div
-                  className="mr-5 flex rounded-full hover:cursor-pointer"
-                  onClick={() => {
-                    handleVote(index);
-                  }}
-                >
-                  <div className="flex h-12 w-16 flex-row items-center justify-center rounded-md border border-neutral-700 p-1">
-                    <span className="pt-1 text-sm">{song.votes}</span>
-                    <ThumbsUp
-                      className={`ml-1 pb-0.5 transition-colors duration-150 ${song.voted ? `fill-neutral-300 text-neutral-900` : `text-neutral-100`}`}
-                    />
+                    <div
+                      className="flex rounded-full hover:cursor-pointer"
+                      onClick={() => handleVote(index)}
+                    >
+                      <div className="flex h-8 w-12 items-center justify-center rounded-md border border-neutral-700">
+                        <span className="text-xs">{song.votes}</span>
+                        <ThumbsUp
+                          size={14}
+                          className={`ml-1 transition-colors duration-150 ${song.voted ? "fill-neutral-300 text-neutral-900" : "text-neutral-100"}`}
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="flex items-center justify-center py-4 text-sm">
+                <Music2 size={16} className="mr-2" />
+                <span>Queue empty</span>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center space-x-2 text-xl font-semibold">
-            <Music2 />
-            <span>Currently empty</span>
-          </div>
-        )}
-      </div>
 
-      <div className="hidden xl:block relative top-32 space-y-5 xl:top-0 xl:w-[30vw]">
-        <div className="flex h-[35vh] w-full justify-center xl:justify-end">
+          {/* Desktop Queue - Hidden on mobile */}
+          <div className="border-custom hidden max-h-[78vh] min-h-[50vh] max-w-[45vw] overflow-hidden rounded-2xl border px-4 py-4 lg:block">
+            <div className="mb-4 font-medium">Queue:</div>
+            {songQueue.length !== 0 ? (
+              <div className="scrollbar-thumb-rounded scrollbar-thumb-blue scrollbar-track-blue-lighter scrollbar-w-2 grid h-full max-h-[70vh] w-full grid-flow-row gap-y-4 overflow-y-auto scroll-smooth">
+                {songQueue.map((song, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex space-x-3">
+                      <Image
+                        src={
+                          song.thumbnail.thumbnails[1]?.url ||
+                          song.thumbnail.thumbnails[0]?.url ||
+                          "/music.png"
+                        }
+                        alt="image"
+                        height={120}
+                        width={120}
+                        className="rounded-lg"
+                      />
+                      <div className="flex flex-col">
+                        <div className="font-medium">
+                          {song.title.split(" ").slice(0, 5).join(" ")}
+                        </div>
+                        <div className="flex items-center space-x-2 text-sm text-neutral-400">
+                          <span>{song.channelTitle}</span>
+                          <span className="text-xs">
+                            {song.length.simpleText}
+                          </span>
+                        </div>
+                        <div className="text-xs text-neutral-400">
+                          Added by: {song.addedBy}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className="flex rounded-full hover:cursor-pointer"
+                      onClick={() => handleVote(index)}
+                    >
+                      <div className="flex h-10 w-14 items-center justify-center rounded-md border border-neutral-700">
+                        <span className="text-sm">{song.votes}</span>
+                        <ThumbsUp
+                          className={`ml-1 transition-colors duration-150 ${song.voted ? "fill-neutral-300 text-neutral-900" : "text-neutral-100"}`}
+                          size={16}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-full w-full  items-center justify-center space-x-2 text-lg font-medium">
+                <Music2 />
+                <span>Currently empty</span>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="mb-8  flex w-full flex-col items-center lg:mb-0 lg:w-1/2  xl:w-2/5">
+          {/* Hidden player */}
           <div className="hidden">
-            <ReactPlayerV
+            <ReactPlayer
               ref={playerRef}
               url={`https://www.youtube.com/watch?v=${currentlyPlayingSong?.id}`}
               playing={roomMetadata?.role === "user" ? false : playingSong}
@@ -439,9 +505,10 @@ export default function RoomPlayer({
             />
           </div>
 
-          <div className="relative flex justify-end">
-            {/* Circle Progress Bar */}
-            <div className="relative -top-32 h-40 w-40 xl:top-0 xl:h-80 xl:w-80">
+          {/* Player UI */}
+          <div className="flex w-full flex-col items-center lg:items-center">
+            {/* Progress Circle and Album Art */}
+            <div className="relative mb-4">
               <Circle
                 percent={songProgress}
                 strokeWidth={2}
@@ -453,312 +520,110 @@ export default function RoomPlayer({
                 }}
                 strokeLinecap="round"
                 trailColor="#a8a29e"
-                className="h-full w-full"
+                className="h-64 w-64 md:h-72 md:w-72"
               />
 
-              {/* Image inside Circle */}
-              <div className="absolute left-1/2 top-1/2 h-[250px] w-[250px] -translate-x-1/2 -translate-y-1/2 transform overflow-hidden rounded-full xl:h-[300px] xl:w-[300px]">
+              <div className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 transform overflow-hidden rounded-full md:h-64 md:w-64">
                 <Image
                   src={`${currentlyPlayingSong?.thumbnail.thumbnails[1]?.url || currentlyPlayingSong?.thumbnail.thumbnails[0]?.url || "/music.png"}`}
                   height={280}
                   width={280}
-                  alt="img"
-                  className={`h-full w-full select-none rounded-full border-purple-300 object-cover ${playingSong ? "animate-spin [animation-duration:30s]" : ""}`}
+                  alt="album art"
+                  className={`h-full w-full select-none rounded-full object-cover ${playingSong ? "animate-spin [animation-duration:30s]" : ""}`}
                 />
               </div>
+            </div>
 
-              <div className="my-4 flex w-full select-none flex-col px-4 pl-6 text-sm">
-                <span className="text-neutral-200">
-                  {currentlyPlayingSong?.title}
-                </span>
-                <div className="relative right-10 top-8 mt-4 flex w-[50vw] items-center justify-center space-x-4 rounded-xl border border-neutral-500 xl:right-0 xl:top-0 xl:w-full">
-                  <span className="font-semibold">
-                    <CurrentDuration
-                      playerRef={playerRef}
-                      role={roomMetadata?.role}
-                      songMetaData={songProgresMeta}
-                    />
-                  </span>
-                  <div className="flex items-center justify-center">
-                    <div className="select-none">{currentVolume * 100}</div>
-                    {renderVolumeIcon()}
-                  </div>
+            {/* Song Info */}
+            <div className="mb-4 w-full px-4 text-center lg:px-0 lg:text-center">
+              <h3 className="truncate text-sm font-medium md:text-base">
+                {currentlyPlayingSong?.title || "No song playing"}
+              </h3>
+              <p className="truncate text-xs text-neutral-400">
+                {currentlyPlayingSong?.channelTitle || ""}
+              </p>
+            </div>
+
+            {/* Progress and Volume */}
+            <div className="mb-4 flex w-full max-w-xs items-center justify-between rounded-lg bg-neutral-900 p-3 lg:max-w-sm">
+              <span className="text-sm font-medium">
+                <CurrentDuration
+                  playerRef={playerRef}
+                  role={roomMetadata?.role}
+                  songMetaData={songProgresMeta}
+                />
+              </span>
+              <div className="flex items-center">
+                <div className="mr-1 text-sm">
+                  {Math.round(currentVolume * 100)}
                 </div>
-              </div>
-
-              <div
-                className={`${roomMetadata?.role === "admin" ? "flex items-center justify-center space-x-5" : "hidden"}`}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <CustomButton
-                    isLoading={false}
-                    Icon={IoPlaySkipBack}
-                    className="h-12 w-12 rounded-full border border-neutral-700 bg-transparent px-0 active:scale-100"
-                    onClick={() => {
-                      handleSeek("seek0");
-                    }}
-                    iconStyle="w-full h-full mr-0"
-                    loaderStyle="mr-0"
-                  />
-
-                  <CustomButton
-                    isLoading={false}
-                    Icon={ChevronLeft}
-                    className="h-10 w-10 rounded-full border border-neutral-700 bg-transparent p-2 px-0 hover:bg-neutral-800 active:scale-100"
-                    onClick={() => {
-                      handleSeek("desc");
-                    }}
-                    iconStyle="w-full h-full"
-                    loaderStyle="mr-0"
-                  />
-
-                  {playingSong === true ? (
-                    <CustomButton
-                      isLoading={false}
-                      Icon={IoPause}
-                      className="h-12 w-12 rounded-full bg-green-700 px-0"
-                      onClick={() => {
-                        setPlayingSong(false);
-                      }}
-                      iconStyle="w-full h-full mr-0"
-                      loaderStyle="mr-0"
-                    />
-                  ) : (
-                    <CustomButton
-                      isLoading={!isPlayerReady}
-                      Icon={IoPlay}
-                      className="h-12 w-12 rounded-full bg-red-800 px-0"
-                      onClick={() => {
-                        setPlayingSong(true);
-                      }}
-                      iconStyle="mr-0 w-full h-full "
-                      loaderStyle="mr-0"
-                    />
-                  )}
-                  <CustomButton
-                    isLoading={false}
-                    Icon={ChevronRight}
-                    className="h-10 w-10 rounded-full border border-neutral-700 bg-transparent p-2 px-0 hover:bg-neutral-800 active:scale-100"
-                    onClick={() => {
-                      handleSeek("inc");
-                    }}
-                    iconStyle="w-full h-full"
-                    loaderStyle="mr-0"
-                  />
-                  <CustomButton
-                    isLoading={isChangingSong}
-                    Icon={IoPlaySkipForward}
-                    className="h-12 w-12 rounded-full border border-neutral-700 bg-transparent px-0"
-                    onClick={handlePlayNext}
-                    iconStyle="mr-0 w-full h-full"
-                    loaderStyle=" mr-0"
-                  />
-                </div>
+                {renderVolumeIcon()}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* mobile */}
+            {/* Playback Controls - Only for admins */}
+            {roomMetadata?.role === "admin" && (
+              <div className="flex w-full items-center  justify-center space-x-3 ">
 
-      <div className="block xl:hidden relative top-60">
-        <div className="flex h-[35vh] w-full justify-center xl:justify-end">
-          <div className="hidden">
-            <ReactPlayerV
-              ref={playerRef}
-              url={`https://www.youtube.com/watch?v=${currentlyPlayingSong?.id}`}
-              playing={roomMetadata?.role === "user" ? false : playingSong}
-              controls={true}
-              width="100%"
-              height="100%"
-              onEnded={handlePlayNext}
-              volume={currentVolume}
-              onProgress={(details) => {
-                if (roomMetadata?.role === "admin") {
-                  setSongProgress(details.played * 100);
-                }
-              }}
-              onReady={() => setIsPlayerReady(true)}
-            />
-          </div>
+                <CustomButton
+                  isLoading={false}
+                  Icon={IoPlaySkipBack}
+                  className="h-10 w-10 rounded-full border border-neutral-700 bg-transparent p-0"
+                  onClick={() => handleSeek("seek0")}
+                  iconStyle="w-5 h-5"
+                  loaderStyle="mr-0"
+                />
 
-          <div className="relative flex justify-end">
-            {/* Circle Progress Bar */}
-            <div className="relative -top-32 h-40 w-40 xl:top-0 xl:h-80 xl:w-80">
-              <Circle
-                percent={songProgress}
-                strokeWidth={2}
-                strokeColor={{
-                  "25%": "#0369a1",
-                  "50%": "#3730a3",
-                  "75%": "#701a75",
-                  "100%": "#831843",
-                }}
-                strokeLinecap="round"
-                trailColor="#a8a29e"
-                className="h-full w-full"
-              />
+                <CustomButton
+                  isLoading={false}
+                  Icon={ChevronLeft}
+                  className="h-8 w-8 rounded-full border border-neutral-700 bg-transparent p-0"
+                  onClick={() => handleSeek("desc")}
+                  iconStyle="w-4 h-4"
+                  loaderStyle="mr-0"
+                />
 
-              {/* Image inside Circle */}
-              <div className="absolute left-1/2 top-1/2 h-[250px] w-[250px] -translate-x-1/2 -translate-y-1/2 transform overflow-hidden rounded-full xl:h-[300px] xl:w-[300px]">
-                <Image
-                  src={`${currentlyPlayingSong?.thumbnail.thumbnails[1]?.url || currentlyPlayingSong?.thumbnail.thumbnails[0]?.url || "/music.png"}`}
-                  height={280}
-                  width={280}
-                  alt="img"
-                  className={`h-full w-full select-none rounded-full border-purple-300 object-cover ${playingSong ? "animate-spin [animation-duration:30s]" : ""}`}
+                {playingSong ? (
+                  <CustomButton
+                    isLoading={false}
+                    Icon={IoPause}
+                    className="h-12 w-12 rounded-full bg-green-700 p-0"
+                    onClick={() => setPlayingSong(false)}
+                    iconStyle="w-6 h-6"
+                    loaderStyle="mr-0"
+                  />
+                ) : (
+                  <CustomButton
+                    isLoading={!isPlayerReady}
+                    Icon={IoPlay}
+                    className="h-12 w-12 rounded-full bg-red-800 p-0"
+                    onClick={() => setPlayingSong(true)}
+                    iconStyle="w-6 h-6"
+                    loaderStyle="mr-0"
+                  />
+                )}
+
+                <CustomButton
+                  isLoading={false}
+                  Icon={ChevronRight}
+                  className="h-8 w-8 rounded-full border border-neutral-700 bg-transparent p-0"
+                  onClick={() => handleSeek("inc")}
+                  iconStyle="w-4 h-4"
+                  loaderStyle="mr-0"
+                />
+
+                <CustomButton
+                  isLoading={isChangingSong}
+                  Icon={IoPlaySkipForward}
+                  className="h-10 w-10 rounded-full border border-neutral-700 bg-transparent p-0"
+                  onClick={handlePlayNext}
+                  iconStyle="w-5 h-5"
+                  loaderStyle="mr-0"
                 />
               </div>
-
-              <div className="my-4 flex w-full select-none flex-col px-4 pl-6 text-sm">
-                <span className="text-neutral-200 relative top-10">
-                  {currentlyPlayingSong?.title}
-                </span>
-                <div className="relative right-10 top-8 mt-4 flex w-[50vw] items-center justify-center space-x-4 rounded-xl border border-neutral-500 xl:right-0 xl:top-0 xl:w-full">
-                  <span className="font-semibold">
-                    <CurrentDuration
-                      playerRef={playerRef}
-                      role={roomMetadata?.role}
-                      songMetaData={songProgresMeta}
-                    />
-                  </span>
-                  <div className="flex items-center justify-center">
-                    <div className="select-none">{currentVolume * 100}</div>
-                    {renderVolumeIcon()}
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className={`${roomMetadata?.role === "admin" ? "flex items-center justify-center space-x-5" : "hidden"}`}
-              >
-                <div className="flex items-center w-[72vw] xl:w-full top-8 left-0 relative  justify-center space-x-2">
-                  <CustomButton
-                    isLoading={false}
-                    Icon={IoPlaySkipBack}
-                    className="h-12 w-12 rounded-full border border-neutral-700 bg-transparent px-0 active:scale-100"
-                    onClick={() => {
-                      handleSeek("seek0");
-                    }}
-                    iconStyle="w-full h-full mr-0"
-                    loaderStyle="mr-0"
-                  />
-
-                  <CustomButton
-                    isLoading={false}
-                    Icon={ChevronLeft}
-                    className="h-10 w-10 rounded-full border border-neutral-700 bg-transparent p-2 px-0 hover:bg-neutral-800 active:scale-100"
-                    onClick={() => {
-                      handleSeek("desc");
-                    }}
-                    iconStyle="w-full h-full"
-                    loaderStyle="mr-0"
-                  />
-
-                  {playingSong === true ? (
-                    <CustomButton
-                      isLoading={false}
-                      Icon={IoPause}
-                      className="h-12 w-12 rounded-full bg-green-700 px-0"
-                      onClick={() => {
-                        setPlayingSong(false);
-                      }}
-                      iconStyle="w-full h-full mr-0"
-                      loaderStyle="mr-0"
-                    />
-                  ) : (
-                    <CustomButton
-                      isLoading={!isPlayerReady}
-                      Icon={IoPlay}
-                      className="h-12 w-12 rounded-full bg-red-800 px-0"
-                      onClick={() => {
-                        setPlayingSong(true);
-                      }}
-                      iconStyle="mr-0 w-full h-full "
-                      loaderStyle="mr-0"
-                    />
-                  )}
-                  <CustomButton
-                    isLoading={false}
-                    Icon={ChevronRight}
-                    className="h-10 w-10 rounded-full border border-neutral-700 bg-transparent p-2 px-0 hover:bg-neutral-800 active:scale-100"
-                    onClick={() => {
-                      handleSeek("inc");
-                    }}
-                    iconStyle="w-full h-full"
-                    loaderStyle="mr-0"
-                  />
-                  <CustomButton
-                    isLoading={isChangingSong}
-                    Icon={IoPlaySkipForward}
-                    className="h-12 w-12 rounded-full border border-neutral-700 bg-transparent px-0"
-                    onClick={handlePlayNext}
-                    iconStyle="mr-0 w-full h-full"
-                    loaderStyle=" mr-0"
-                  />
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
-      </div>
-
-      <div className="border-custom relative top-60 flex w-[100vw] flex-col items-center gap-y-5 rounded-2xl border p-4 xl:hidden xl:max-h-[78vh] xl:min-h-[20vh]">
-        <div className="">Currently playing :</div>
-        {songQueue.length !== 0 ? (
-          <div className="scrollbar-thumb-rounded scrollbar-thumb-blue scrollbar-track-blue-lighter scrollbar-w-2 grid h-full w-full grid-flow-row gap-y-5 overflow-y-auto scroll-smooth">
-            {songQueue.map((song, index) => (
-              <div key={index} className="flex h-20 justify-between">
-                <div className="flex space-x-1">
-                  <Image
-                    src={
-                      song.thumbnail.thumbnails[1]?.url ||
-                      song.thumbnail.thumbnails[0]?.url ||
-                      "/music.png"
-                    }
-                    alt="image"
-                    height={10}
-                    width={100}
-                    className="rounded-lg"
-                  />
-                  {/* video title */}
-                  <div className="flex flex-col">
-                    <div className="text-xs">
-                      {song.title.split(" ").slice(0, 5).join(" ")}
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm text-neutral-400">
-                      <span className="text-xs">{song.channelTitle}</span>
-                      <span className="text-xs">{song.length.simpleText}</span>
-                    </div>
-                    <div className="text-xs text-neutral-400">
-                      Added by : {song.addedBy}
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className="flex rounded-full hover:cursor-pointer"
-                  onClick={() => {
-                    handleVote(index);
-                  }}
-                >
-                  <div className="flex h-6 w-12 flex-row items-center justify-center rounded-md border border-neutral-700 p-1">
-                    <span className="pt-1 text-sm">{song.votes}</span>
-                    <ThumbsUp
-                      className={`ml-1 pb-0.5 transition-colors duration-150 ${song.voted ? `fill-neutral-300 text-neutral-900` : `text-neutral-100`}`}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex h-full w-full items-center justify-center space-x-2 text-xl font-semibold">
-            <Music2 />
-            <span>Currently empty</span>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -11,7 +11,6 @@ import debounce from "debounce";
 import { useSocket } from "@/hooks/useSocket";
 import Image from "next/image";
 import CustomButton from "./ui/CustomButton";
-import toast from "react-hot-toast";
 
 function SongSearchBar({ socket }: { socket: WebSocket }) {
   const [isAdding, setIsAdding] = useState<boolean>(false);
@@ -46,9 +45,6 @@ function SongSearchBar({ socket }: { socket: WebSocket }) {
           setSongs(parsedSongs);
         }
       }
-      // if (data.type === "success" && data.message === "song added") {
-      //   toast.success(data.message, { duration: 800 });
-      // }
     };
     socket.addEventListener("message", handleMessage);
 
@@ -90,70 +86,81 @@ function SongSearchBar({ socket }: { socket: WebSocket }) {
   };
 
   return (
-    <div className="flex flex-col">
-      <div className="relative flex">
+    <div className="relative flex w-full flex-col">
+      <div className="relative flex w-full">
         <Input
           onChange={(e) => {
             handleSearch(e.target.value);
           }}
           onFocus={() => setIsInputFocus(true)}
-          // onBlur={() => setIsInputFocus(false)}
           placeholder="What do you want to play?"
-          className="w-[350px] xl:w-[420px] rounded-3xl pl-16 text-sm text-neutral-300 transition-colors duration-200 focus:outline-neutral-300"
+          className="w-full rounded-3xl bg-neutral-900 py-2 pl-12 text-sm text-neutral-300 transition-colors duration-200 focus:outline-neutral-300"
         />
-        <Search className="absolute left-3 top-2 flex h-8 w-8 text-neutral-300" />
+        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-300" />
       </div>
-      {isInputFocus && (
+
+      {isInputFocus && songs && (
         <div
           ref={dropDownRef}
-          className="absolute top-16 w-[350px] xl:w-[420px] flex-1 flex-col space-y-2 rounded-md bg-neutral-900 px-4 py-2 backdrop-blur-sm"
+          className="absolute top-full z-30 mt-2 flex max-h-[60vh] w-full flex-col space-y-2 overflow-y-auto rounded-md bg-neutral-900/95 px-3 py-2 shadow-lg backdrop-blur-sm"
         >
-          {songs?.items.slice(0, 5).map((value, index) => (
-            <div key={index} className="flex justify-between">
-              <div className="flex items-center text-lg">
-                <div className="relative h-10 w-10">
-                  <Image
-                    alt="pic"
-                    className="rounded-full object-cover"
-                    src={
-                      value.thumbnail?.thumbnails[0]?.url?.startsWith("//")
-                        ? `https:${value.thumbnail?.thumbnails[0]?.url}`
-                        : value.thumbnail?.thumbnails[0]?.url ||
-                          (value.thumbnail?.thumbnails[1]?.url?.startsWith("//")
-                            ? `https:${value.thumbnail?.thumbnails[1]?.url}`
-                            : value.thumbnail?.thumbnails[1]?.url) ||
-                          "/music.png"
-                    }
-                    fill
-                  />
+          {songs.items?.length > 0 ? (
+            songs?.items.slice(0, 5).map((value, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between border-b border-neutral-800 py-2 last:border-0"
+              >
+                <div className="flex items-center">
+                  <div className="relative h-10 w-10 flex-shrink-0">
+                    <Image
+                      alt="thumbnail"
+                      className="rounded-md object-cover"
+                      src={
+                        value.thumbnail?.thumbnails[0]?.url?.startsWith("//")
+                          ? `https:${value.thumbnail?.thumbnails[0]?.url}`
+                          : value.thumbnail?.thumbnails[0]?.url ||
+                            (value.thumbnail?.thumbnails[1]?.url?.startsWith(
+                              "//",
+                            )
+                              ? `https:${value.thumbnail?.thumbnails[1]?.url}`
+                              : value.thumbnail?.thumbnails[1]?.url) ||
+                            "/music.png"
+                      }
+                      fill
+                    />
+                  </div>
+                  <div className="ml-2 flex max-w-[40vw] flex-col xl:max-w-[200px]">
+                    <span className="truncate text-sm">{value.title}</span>
+                    <span className="truncate text-xs text-neutral-300">
+                      {value.channelTitle}
+                    </span>
+                  </div>
                 </div>
-                <div className="ml-2 flex flex-col">
-                  <span>{value.title.slice(0, 15)}</span>
-                  <span className="text-xs text-neutral-300">
-                    {value.channelTitle}
+                <div className="flex items-center space-x-2">
+                  <span className="hidden text-xs text-neutral-300 sm:inline">
+                    {value?.length?.simpleText}
                   </span>
+
+                  <CustomButton
+                    Icon={Plus}
+                    className="h-8 w-16 rounded-lg px-2 text-xs sm:w-auto sm:px-3"
+                    isLoading={isAdding}
+                    onClick={() => {
+                      handleAdd(index);
+                    }}
+                    iconStyle="mr-1 sm:mr-2 h-4 w-4"
+                    loaderStyle="mr-1 sm:mr-2"
+                  >
+                    Add
+                  </CustomButton>
                 </div>
               </div>
-              <div className="flex items-center justify-center space-x-2">
-                <span className="text-neutral-300">
-                  {value?.length?.simpleText}
-                </span>
-
-                <CustomButton
-                  Icon={Plus}
-                  className="h-8 max-w-32 px-3 text-xs"
-                  isLoading={isAdding}
-                  onClick={() => {
-                    handleAdd(index);
-                  }}
-                  iconStyle="mr-2"
-                  loaderStyle="mr-2"
-                >
-                  Add
-                </CustomButton>
-              </div>
+            ))
+          ) : (
+            <div className="py-4 text-center text-neutral-400">
+              No songs found. Try a different search.
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>

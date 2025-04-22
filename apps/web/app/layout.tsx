@@ -11,7 +11,10 @@ const poppins = Poppins({
 
 export const metadata: Metadata = {
   title: "Play-Fi",
-  description: "",
+  description: "Realtime music streaming app.",
+  icons: {
+    icon: "/favicon.png"
+  }
 };
 
 export default function RootLayout({

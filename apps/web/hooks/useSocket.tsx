@@ -39,11 +39,12 @@ export function SocketProvider({
         toast.error("token not found", { duration: 1000 });
         return;
       }
-      console.log("TOKEN IS", token)
       const wsUrl =
         process.env.NODE_ENV === "production"
           ? `wss://playfi-ws.ashishtiwari.net/?token=${token}`
-          : `wss://playfi-ws.ashishtiwari.net/?token=${token}`;
+          : `wss://playfi-ws.ashishtiwari.net/?token=${token}`
+
+          // : `ws://localhost:3014/?token=${token}`;
       const ws = new WebSocket(wsUrl);
 
       ws.onopen = () => {

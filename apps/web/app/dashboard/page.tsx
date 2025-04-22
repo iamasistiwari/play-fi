@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import React from "react";
 import { authOptions } from "../../lib/auth";
-import { User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import RoomInput from "../../components/RoomInput";
 import Image from "next/image";
 import RecentlyJoined from "@/components/RecentlyJoined";
@@ -16,10 +16,6 @@ export default async function page() {
           Play-Fi
         </span>
         <div className="flex items-center justify-center space-x-2">
-          <div className="flex flex-col">
-            <span className="">{session?.user.name}</span>
-            <Link className="text-xs text-neutral-400" href={"/api/auth/signout"}>Signout</Link>
-          </div>
           <span className="relative flex h-8 w-8 items-center justify-center rounded-full border border-neutral-700 p-1.5 text-neutral-400">
             {session?.user.image ? (
               <Image
@@ -32,15 +28,21 @@ export default async function page() {
               <User />
             )}
           </span>
+          <div className="flex flex-col">
+            <span className="">{session?.user.name}</span>
+            <Link href={'/api/auth/signout'} className="flex flex-col">
+              <span className="text-xs text-neutral-400">Signout ?</span>
+            </Link>
+          </div>
         </div>
       </nav>
 
       {/* input and recent */}
-      <div className="mt-10 flex flex-col space-y-2 px-4 xl:flex-row xl:justify-between xl:px-32">
-        <div>
+      <div className="my-10 flex flex-col space-y-16 lg:space-y-0 px-4 xl:flex-row xl:justify-between xl:px-32">
+        <div className="">
           <RoomInput />
         </div>
-        <div>
+        <div className=" mb-10 lg:mb-0">
           <RecentlyJoined />
         </div>
       </div>
