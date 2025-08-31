@@ -31,7 +31,6 @@ export default function RoomNav() {
 
   return (
     <div className="flex w-full flex-col">
-      {/* Navigation Bar - Fixed on both mobile and desktop */}
       <div className="flex h-[72px] items-center justify-between border-b border-neutral-800 px-4 py-2 xl:px-32">
         {/* Logo */}
         <span className="inline-block bg-gradient-to-r from-blue-500 to-green-600 bg-clip-text text-2xl font-semibold text-transparent">
@@ -57,17 +56,16 @@ export default function RoomNav() {
         </div>
       </div>
 
-      {/* Search Bar - Below nav on mobile, Hidden on desktop (assuming it appears elsewhere on desktop) */}
+      {/* Mobile search bar */}
       <div className="w-full px-4 py-3 md:hidden">
         <SongSearchBar socket={socket!} />
       </div>
 
-      {/* Desktop Search Bar - Hidden on mobile (presumably this is positioned elsewhere in your desktop layout) */}
+      {/* Desktop searh bar */}
       <div className="hidden xl:absolute xl:left-1/2 xl:top-3 xl:z-10 xl:flex min-w-[30vw] xl:-translate-x-1/2 xl:transform">
         <SongSearchBar socket={socket!} />
       </div>
 
-      {/* Background Effect */}
       <div className="absolute top-0 z-[-1] max-h-[72px] w-screen overflow-hidden">
         <BallPit ballsCount={member} />
       </div>

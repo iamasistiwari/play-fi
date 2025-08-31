@@ -363,12 +363,10 @@ export default function RoomPlayer({
 
   return (
     <div className="w-full py-6">
-      {/* Mobile-first layout (stacked) that changes to side-by-side on lg breakpoints */}
       <div className="flex flex-col w-full  lg:flex-row lg:items-start  lg:justify-between lg:space-x-6">
-        {/* Left side - Current Track (stacked on mobile, left-aligned on lg+) */}
-        {/* Right side - Queue (mobile & desktop versions) */}
         <div className="w-full lg:w-1/2 xl:w-3/5">
-          {/* Mobile Song Queue - Only shown on mobile */}
+
+          {/* Mobile Song Queue */}
           <div className="mb-6 w-full lg:hidden">
             <div className="px-4 pb-2 text-center font-medium">
               Currently playing:
@@ -423,14 +421,14 @@ export default function RoomPlayer({
             )}
           </div>
 
-          {/* Desktop Queue - Hidden on mobile */}
+          {/* Desktop Queue */}
           <div className="border-custom hidden max-h-[78vh] min-h-[50vh] max-w-[45vw] overflow-hidden rounded-2xl border px-4 py-4 lg:block">
             <div className="mb-4 font-medium">Queue:</div>
             {songQueue.length !== 0 ? (
               <div className="scrollbar-thumb-rounded scrollbar-thumb-blue scrollbar-track-blue-lighter scrollbar-w-2 grid h-full max-h-[70vh] w-full grid-flow-row gap-y-4 overflow-y-auto scroll-smooth">
                 {songQueue.map((song, index) => (
                   <div
-                    key={index}
+                    key={song.id}
                     className="flex items-center justify-between"
                   >
                     <div className="flex space-x-3">
@@ -485,7 +483,6 @@ export default function RoomPlayer({
           </div>
         </div>
         <div className="mb-8  flex w-full flex-col items-center lg:mb-0 lg:w-1/2  xl:w-2/5">
-          {/* Hidden player */}
           <div className="hidden">
             <ReactPlayer
               ref={playerRef}
@@ -505,9 +502,7 @@ export default function RoomPlayer({
             />
           </div>
 
-          {/* Player UI */}
           <div className="flex w-full flex-col items-center lg:items-center">
-            {/* Progress Circle and Album Art */}
             <div className="relative mb-4">
               <Circle
                 percent={songProgress}
@@ -534,7 +529,6 @@ export default function RoomPlayer({
               </div>
             </div>
 
-            {/* Song Info */}
             <div className="mb-4 w-full px-4 text-center lg:px-0 lg:text-center">
               <h3 className="truncate text-sm font-medium md:text-base">
                 {currentlyPlayingSong?.title || "No song playing"}
@@ -543,8 +537,7 @@ export default function RoomPlayer({
                 {currentlyPlayingSong?.channelTitle || ""}
               </p>
             </div>
-
-            {/* Progress and Volume */}
+            {/* sound bar length bar */}
             <div className="mb-4 flex w-full max-w-xs items-center justify-between rounded-lg bg-neutral-900 p-3 lg:max-w-sm">
               <span className="text-sm font-medium">
                 <CurrentDuration
@@ -554,14 +547,13 @@ export default function RoomPlayer({
                 />
               </span>
               <div className="flex items-center">
-                <div className="mr-1 text-sm">
+                <div className="mr-1 text-sm select-none">
                   {Math.round(currentVolume * 100)}
                 </div>
                 {renderVolumeIcon()}
               </div>
             </div>
 
-            {/* Playback Controls - Only for admins */}
             {roomMetadata?.role === "admin" && (
               <div className="flex w-full items-center  justify-center space-x-3 ">
 
