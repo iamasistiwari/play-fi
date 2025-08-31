@@ -8,7 +8,6 @@ WORKDIR /app
 
 RUN npm install -g pnpm
 
-
 COPY package.json pnpm-lock.yaml ./
 COPY turbo.json ./
 COPY pnpm-workspace.yaml ./
